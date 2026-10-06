@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>at365.WallpaperSlideshow</RootNamespace>
+    <AssemblyName>Applet.WallpaperSlideshow.at365</AssemblyName>
+    <StartupObject>Applets.WallpaperSlideshow.Program</StartupObject>
+    <ApplicationIcon>resources/icon.ico</ApplicationIcon>
+    <Version>0.1.0</Version>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../AppDock.at365/dotnet/AppDock.Runtime/AppDock.Runtime.csproj" />
+    <InternalsVisibleTo Include="Applet.WallpaperSlideshow.RegressionTests" />
+  </ItemGroup>
+</Project>

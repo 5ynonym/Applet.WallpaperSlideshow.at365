@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Applet.WallpaperSlideshow/Applet.WallpaperSlideshow.csproj" />
+  <Project Path="Applet.WallpaperSlideshow.RegressionTests/Applet.WallpaperSlideshow.RegressionTests.csproj" />
+</Solution>
