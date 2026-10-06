@@ -2,6 +2,7 @@
   "apiVersion": 1,
   "id": "at365.wallpaper-slideshow",
   "name": "Applet.WallpaperSlideshow.at365",
+  "displayName": "WallpaperSlideshow.at365",
   "version": "0.3.0",
   "minimumHostVersion": "0.6.0",
   "startupDelaySeconds": 30,
