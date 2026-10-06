@@ -69,7 +69,7 @@ internal static class AppletTests
         }
         public void Configure(Config config) { HistoryManager.Instance.SetConfig(config); }
         public void Pause(bool paused) { IsPaused = paused; }
-        public void Next() { }
+        public void Next() { if (!IsPaused) Console.Error.WriteLine("FIXTURE_NEXT_WALLPAPER"); }
         public void Stop() { }
     }
     public static void RunProtocolFixture()

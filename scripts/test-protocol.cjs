@@ -23,11 +23,30 @@ const fixture = path.join(root, 'Applet.WallpaperSlideshow.RegressionTests/bin/R
   try {
     const result = await peer.request('activate', { id: 'at365.wallpaper-slideshow', settings });
     assert.equal(result.tray.length, 0);
-    assert.equal(result.commands.length, 13);
+    assert.equal(result.commands.length, 15);
+    for (const [suffix, title] of [['start', '壁紙スライドショーを開始'], ['stop', '壁紙スライドショーを停止'],
+      ['toggle', '壁紙スライドショーの開始／停止を切り替え'], ['next', '次の壁紙に更新']]) {
+      assert.equal(result.commands.find((command) => command.id === 'at365.wallpaper-slideshow.' + suffix)?.title, title);
+    }
+    assert.deepEqual(panel.actions.slice(0, 4).map((action) => action.title), ['開始', '停止', '開始／停止を切り替え', '次の壁紙に更新']);
     assert.equal(panel.facts.find((fact) => fact.label === '状態').value, '再生中');
+    await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.stop' });
+    assert.equal(settings.paused, true);
+    await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.next' });
+    assert.equal(diagnostics.includes('FIXTURE_NEXT_WALLPAPER'), false);
+    await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.start' });
+    assert.equal(settings.paused, false);
+    await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.next' });
+    for (let attempt = 0; attempt < 50 && !diagnostics.includes('FIXTURE_NEXT_WALLPAPER'); attempt++)
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    assert.equal(diagnostics.split('FIXTURE_NEXT_WALLPAPER').length - 1, 1);
+    await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.toggle' });
+    assert.equal(settings.paused, true);
+    await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.toggle' });
+    assert.equal(settings.paused, false);
     await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.pause' });
     assert.equal(settings.paused, true);
-    assert.match(panel.facts.find((fact) => fact.label === '状態').value, /一時停止/);
+    assert.match(panel.facts.find((fact) => fact.label === '状態').value, /停止中/);
     await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.resume' });
     assert.equal(settings.paused, false);
     await peer.request('settings.changed', { intervalSeconds: 7 });
@@ -35,6 +54,12 @@ const fixture = path.join(root, 'Applet.WallpaperSlideshow.RegressionTests/bin/R
     await peer.request('settings.changed', { intervalSeconds: 0 });
     assert(logged); assert.match(panel.description, /設定エラー/);
     assert.equal(panel.facts.find((fact) => fact.label === '更新間隔').value, '7 秒');
+    await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.stop' });
+    assert.equal(settings.paused, true);
+    assert.match(panel.facts.find((fact) => fact.label === '状態').value, /停止中/);
+    await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.start' });
+    assert.equal(settings.paused, false);
+    assert.equal(panel.facts.find((fact) => fact.label === '状態').value, '再生中');
     await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.history' });
     assert.equal(panel.images.length, 4); assert(panel.images.every((image) => image.image.startsWith('data:image/jpeg;base64,')));
     assert.match(panel.images[0].title, /image6/);
@@ -45,7 +70,7 @@ const fixture = path.join(root, 'Applet.WallpaperSlideshow.RegressionTests/bin/R
     await peer.request('deactivate'); deactivated = true;
     child.stdin.end();
     assert.equal(await exited, 0, diagnostics);
-    console.log(JSON.stringify({ ok: true, checks: ['activation / no tray', 'pause persistence / resume', 'live settings / invalid rollback', 'paged history / thumbnails / release', 'deactivate / EOF'] }, null, 2));
+    console.log(JSON.stringify({ ok: true, checks: ['activation / no tray / command registration', 'start / stop / toggle / next / legacy aliases', 'playback with invalid image settings', 'live settings / invalid rollback', 'paged history / thumbnails / release', 'deactivate / EOF'] }, null, 2));
   } finally {
     if (!deactivated && !peer.closed) await peer.request('deactivate').catch(() => {});
     child.stdin.end(); peer.close();

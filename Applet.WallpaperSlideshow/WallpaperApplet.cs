@@ -29,12 +29,14 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
             config = options;
             fingerprint = SlideshowOptions.Fingerprint(options);
         }, token);
-        services.Commands.Register(services.ExtensionId + ".next", "次の壁紙へ", async ct => {
+        services.Commands.Register(services.ExtensionId + ".start", "壁紙スライドショーを開始", ct => PauseAsync(false, ct));
+        services.Commands.Register(services.ExtensionId + ".stop", "壁紙スライドショーを停止", ct => PauseAsync(true, ct));
+        services.Commands.Register(services.ExtensionId + ".next", "次の壁紙に更新", async ct => {
             await dispatcher.InvokeAsync(engine.Next, ct); await PublishAsync(ct);
         });
         services.Commands.Register(services.ExtensionId + ".pause", "壁紙スライドショーを一時停止", ct => PauseAsync(true, ct));
         services.Commands.Register(services.ExtensionId + ".resume", "壁紙スライドショーを再開", ct => PauseAsync(false, ct));
-        services.Commands.Register(services.ExtensionId + ".toggle", "壁紙スライドショーの停止を切り替え", ct => PauseAsync(!services.Settings.Get("paused", false), ct));
+        services.Commands.Register(services.ExtensionId + ".toggle", "壁紙スライドショーの開始／停止を切り替え", ct => PauseAsync(!services.Settings.Get("paused", false), ct));
         services.Commands.Register(services.ExtensionId + ".history", "最近使った壁紙を表示", ct => ShowHistoryAsync(0, ct));
         services.Commands.Register(services.ExtensionId + ".history.previous", "壁紙履歴の前のページ", ct => ShowHistoryAsync(historyPage - 1, ct));
         services.Commands.Register(services.ExtensionId + ".history.next", "壁紙履歴の次のページ", ct => ShowHistoryAsync(historyPage + 1, ct));
@@ -67,7 +69,9 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
     {
         var services = context ?? throw new InvalidOperationException("Appletは停止しています。");
         await services.Settings.SetAsync("paused", paused, token);
-        await ApplyAsync(token);
+        // Playback commands must still work when a saved image configuration is invalid.
+        await dispatcher.InvokeAsync(() => engine.Pause(paused), token);
+        await PublishAsync(token);
     }
     private async Task ApplyAsync(CancellationToken token)
     {
@@ -102,14 +106,16 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
             }) { Images = historyImages } : new DockPanel("壁紙スライドショー",
             error is null ? "モニターごとの画像フォルダーから、重複なしで壁紙を切り替えます。" : "設定エラー: " + error,
             new[] {
-                new PanelFact("状態", engine.IsPaused ? "一時停止中（手動停止・ロック・リモート接続）" : "再生中"),
+                new PanelFact("状態", engine.IsPaused ? "停止中（手動停止・ロック・リモート接続）" : "再生中"),
                 new PanelFact("更新間隔", $"{config?.IntervalSeconds ?? 60} 秒"),
                 new PanelFact("モニター", string.Join(" / ", StableScreensProvider.Screens.Select((s, i) => $"{i + 1}: {s.Bounds.Width}×{s.Bounds.Height}"))),
                 new PanelFact("画像ソース", string.Join(" / ", config?.Monitors.Select((m, i) => $"{i + 1}: {m.SourceFolders().Count()}フォルダー") ?? [])),
                 new PanelFact("バージョン", typeof(WallpaperApplet).Assembly.GetName().Version!.ToString(3)),
             }, new[] {
-                new PanelAction("次の壁紙へ", services.ExtensionId + ".next"),
-                new PanelAction("一時停止／再開", services.ExtensionId + ".toggle"),
+                new PanelAction("開始", services.ExtensionId + ".start"),
+                new PanelAction("停止", services.ExtensionId + ".stop"),
+                new PanelAction("開始／停止を切り替え", services.ExtensionId + ".toggle"),
+                new PanelAction("次の壁紙に更新", services.ExtensionId + ".next"),
                 new PanelAction("最近使った壁紙", services.ExtensionId + ".history"),
                 new PanelAction("データフォルダーを開く", services.ExtensionId + ".data"),
             }), token);

@@ -69,11 +69,17 @@ delete env.ELECTRON_RUN_AS_NODE;
     await page.getByRole('button', { name: '壁紙の操作に戻る', exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll('.panel-images img').length === 0);
     assert.equal(await page.locator('.panel-images img').count(), 0);
-    await page.getByRole('button', { name: '一時停止／再開', exact: true }).click();
+    await page.getByRole('button', { name: '停止', exact: true }).click();
+    await page.waitForFunction((id) => window.dock.snapshot().then((s) => s.settings.value.extensions[id].settings.paused === true), manifest.id);
+    await page.getByRole('button', { name: '開始', exact: true }).click();
+    await page.waitForFunction((id) => window.dock.snapshot().then((s) => s.settings.value.extensions[id].settings.paused === false), manifest.id);
+    await page.getByRole('button', { name: '次の壁紙に更新', exact: true }).click();
+    await page.getByRole('button', { name: '開始／停止を切り替え', exact: true }).click();
     await page.waitForFunction((id) => window.dock.snapshot().then((s) => s.settings.value.extensions[id].settings.paused === true), manifest.id);
     snapshot = await page.evaluate(() => window.dock.snapshot());
     assert.equal(snapshot.extensions[0].tray.length, 0);
     assert.equal(snapshot.extensions[0].state, 'running');
+    await page.screenshot({ path: path.join(profile, 'playback-controls.png') });
     await app.evaluate(({ net, shell }) => {
       net.fetch = async (url) => {
         globalThis.testUpdateUrl = url;

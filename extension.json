@@ -2,7 +2,7 @@
     "apiVersion":  1,
     "id":  "at365.wallpaper-slideshow",
     "name":  "Applet.WallpaperSlideshow.at365",
-    "version":  "0.1.0",
+    "version":  "0.2.0",
     "minimumHostVersion":  "0.5.0",
     "startupDelaySeconds":  30,
     "updateRepository":  "5ynonym/Applet.WallpaperSlideshow.at365",
@@ -15,7 +15,7 @@
                      ],
     "settings":  [
                      {
-                         "title":  "一時停止",
+                         "title":  "停止",
                          "key":  "paused",
                          "default":  false,
                          "description":  "手動停止状態を保存します。ロック・リモート接続による停止は別に維持します。",
