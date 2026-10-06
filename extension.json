@@ -1,88 +1,219 @@
 {
-    "apiVersion":  1,
-    "id":  "at365.wallpaper-slideshow",
-    "name":  "Applet.WallpaperSlideshow.at365",
-    "version":  "0.2.0",
-    "minimumHostVersion":  "0.5.0",
-    "startupDelaySeconds":  30,
-    "updateRepository":  "5ynonym/Applet.WallpaperSlideshow.at365",
-    "runtime":  "native",
-    "entry":  "Applet.WallpaperSlideshow.at365.exe",
-    "description":  "モニターごとの複数フォルダーから壁紙を再生。タイル・フォルダー監視・AppDock内の履歴に対応します。",
-    "capabilities":  [
-                         "ui",
-                         "settings"
-                     ],
-    "settings":  [
-                     {
-                         "title":  "停止",
-                         "key":  "paused",
-                         "default":  false,
-                         "description":  "手動停止状態を保存します。ロック・リモート接続による停止は別に維持します。",
-                         "type":  "boolean"
-                     },
-                     {
-                         "maximum":  2147483,
-                         "title":  "壁紙の更新間隔（秒）",
-                         "key":  "intervalSeconds",
-                         "type":  "number",
-                         "description":  "長めの間隔ほど画像の読み込みとCPU使用を減らせます。",
-                         "default":  60,
-                         "step":  1,
-                         "minimum":  1
-                     },
-                     {
-                         "title":  "モニターごとの画像設定",
-                         "key":  "monitors",
-                         "default":  "[]",
-                         "description":  "左から右の画面順に設定します。例: [{\"Folders\":[\"C:/Wallpapers/A\",\"C:/Wallpapers/B\"],\"Mode\":\"Tile\",\"TileCount\":4}]。Foldersは複数指定可。未設定の画面は黒になります。",
-                         "type":  "json"
-                     },
-                     {
-                         "default":  10,
-                         "maximum":  4096,
-                         "minimum":  0,
-                         "step":  1,
-                         "type":  "number",
-                         "key":  "tileMargin",
-                         "title":  "タイル間の余白（px）"
-                     },
-                     {
-                         "maximum":  1000,
-                         "title":  "履歴件数（モニターごと）",
-                         "key":  "historyLimit",
-                         "type":  "number",
-                         "description":  "0で履歴を残しません。履歴は実行中だけ保持し、画像は表示ページだけ読み込みます。",
-                         "default":  30,
-                         "step":  1,
-                         "minimum":  0
-                     },
-                     {
-                         "default":  320,
-                         "maximum":  320,
-                         "minimum":  1,
-                         "step":  1,
-                         "type":  "number",
-                         "key":  "thumbnailWidth",
-                         "title":  "履歴サムネイルの幅（px）"
-                     },
-                     {
-                         "default":  240,
-                         "maximum":  240,
-                         "minimum":  1,
-                         "step":  1,
-                         "type":  "number",
-                         "key":  "thumbnailHeight",
-                         "title":  "履歴サムネイルの高さ（px）"
-                     },
-                     {
-                         "default":  30,
-                         "maximum":  160,
-                         "minimum":  1,
-                         "step":  1,
-                         "type":  "number",
-                         "key":  "maxFileNameLength",
-                         "title":  "履歴ファイル名の表示文字数"
-                     }
-                 ]
+  "apiVersion": 1,
+  "id": "at365.wallpaper-slideshow",
+  "name": "Applet.WallpaperSlideshow.at365",
+  "version": "0.3.0",
+  "minimumHostVersion": "0.6.0",
+  "startupDelaySeconds": 30,
+  "updateRepository": "5ynonym/Applet.WallpaperSlideshow.at365",
+  "runtime": "native",
+  "entry": "Applet.WallpaperSlideshow.at365.exe",
+  "description": "モニターごとの複数フォルダーから壁紙を再生。タイル・フォルダー監視・AppDock内の履歴に対応します。",
+  "capabilities": [
+    "ui",
+    "settings",
+    "local-images"
+  ],
+  "settings": [
+    {
+      "title": "停止",
+      "key": "paused",
+      "default": false,
+      "description": "手動停止状態を保存します。ロック・リモート接続による停止は別に維持します。",
+      "type": "boolean"
+    },
+    {
+      "maximum": 2147483,
+      "title": "壁紙の更新間隔（秒）",
+      "key": "intervalSeconds",
+      "type": "number",
+      "description": "長めの間隔ほど画像の読み込みとCPU使用を減らせます。",
+      "default": 60,
+      "step": 1,
+      "minimum": 1
+    },
+    {
+      "title": "モニターごとの画像設定",
+      "key": "monitors",
+      "default": [],
+      "description": "左から右、同じX位置では上から下の画面順です。各モニターのフォルダー・表示モード・タイル枚数・余白を個別に設定します。",
+      "type": "object-list",
+      "fields": [
+        {
+          "key": "Folders",
+          "title": "画像ソースフォルダー",
+          "type": "string-list",
+          "default": [],
+          "aliases": [
+            "Folder"
+          ],
+          "format": "directory"
+        },
+        {
+          "key": "Mode",
+          "title": "表示モード",
+          "type": "select",
+          "default": "Fit",
+          "numericOptions": true,
+          "options": [
+            {
+              "value": "Fill",
+              "label": "Fill（画面いっぱい）"
+            },
+            {
+              "value": "Fit",
+              "label": "Fit（全体を表示）"
+            },
+            {
+              "value": "Stretch",
+              "label": "Stretch（引き伸ばし）"
+            },
+            {
+              "value": "Center",
+              "label": "Center（中央に等倍）"
+            },
+            {
+              "value": "Tile",
+              "label": "Tile（複数画像を並べる）"
+            }
+          ]
+        },
+        {
+          "key": "TileCount",
+          "title": "タイル枚数",
+          "type": "number",
+          "default": 4,
+          "minimum": 1,
+          "maximum": 64,
+          "step": 1
+        },
+        {
+          "key": "PaddingLeft",
+          "title": "左のPadding（px）",
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 65535,
+          "step": 1
+        },
+        {
+          "key": "PaddingRight",
+          "title": "右のPadding（px）",
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 65535,
+          "step": 1
+        },
+        {
+          "key": "PaddingTop",
+          "title": "上のPadding（px）",
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 65535,
+          "step": 1
+        },
+        {
+          "key": "PaddingBottom",
+          "title": "下のPadding（px）",
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 65535,
+          "step": 1
+        }
+      ],
+      "itemTitle": "モニター"
+    },
+    {
+      "default": 10,
+      "maximum": 4096,
+      "minimum": 0,
+      "type": "number",
+      "key": "tileMargin",
+      "title": "タイル間の余白（px）"
+    },
+    {
+      "maximum": 1000,
+      "title": "履歴件数（モニターごと）",
+      "key": "historyLimit",
+      "type": "number",
+      "description": "0で履歴を残しません。履歴は実行中だけ保持し、画像は表示ページだけ読み込みます。",
+      "default": 30,
+      "step": 1,
+      "minimum": 0
+    },
+    {
+      "default": 480,
+      "maximum": 2048,
+      "minimum": 1,
+      "step": 1,
+      "type": "number",
+      "key": "thumbnailWidth",
+      "title": "履歴サムネイルの幅（px）"
+    },
+    {
+      "default": 360,
+      "maximum": 2048,
+      "minimum": 1,
+      "step": 1,
+      "type": "number",
+      "key": "thumbnailHeight",
+      "title": "履歴サムネイルの高さ（px）"
+    },
+    {
+      "default": 30,
+      "maximum": 1024,
+      "minimum": 1,
+      "step": 1,
+      "type": "number",
+      "key": "maxFileNameLength",
+      "title": "履歴ファイル名の表示文字数"
+    },
+    {
+      "key": "historyPageSize",
+      "title": "最近使った壁紙の1ページの表示件数",
+      "type": "number",
+      "default": 4,
+      "minimum": 1,
+      "maximum": 1000,
+      "step": 1,
+      "description": "1～1000件。履歴を保存する件数とは別に設定できます。画像は選択したモニターの表示ページだけ読み込みます。"
+    }
+  ],
+  "commands": [
+    {
+      "title": "壁紙スライドショーを開始／再開",
+      "activateOnExecute": true,
+      "id": "at365.wallpaper-slideshow.start",
+      "aliases": [
+        "at365.wallpaper-slideshow.resume"
+      ]
+    },
+    {
+      "id": "at365.wallpaper-slideshow.stop",
+      "title": "壁紙スライドショーを停止",
+      "aliases": [
+        "at365.wallpaper-slideshow.pause"
+      ]
+    },
+    {
+      "title": "壁紙スライドショーの開始／停止を切り替え",
+      "activateOnExecute": true,
+      "id": "at365.wallpaper-slideshow.toggle"
+    },
+    {
+      "id": "at365.wallpaper-slideshow.next",
+      "title": "次の壁紙に更新"
+    },
+    {
+      "id": "at365.wallpaper-slideshow.history",
+      "title": "最近使った壁紙を表示"
+    },
+    {
+      "id": "at365.wallpaper-slideshow.data",
+      "title": "壁紙のデータフォルダーを開く"
+    }
+  ]
 }

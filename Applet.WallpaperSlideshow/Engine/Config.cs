@@ -84,9 +84,6 @@ namespace at365.WallpaperSlideshow
                     throw new InvalidDataException($"Monitors[{i}] に null は指定できません。");
                 if (monitor.Folders == null || monitor.Folders.Count > 64 || monitor.Folders.Any(string.IsNullOrWhiteSpace))
                     throw new InvalidDataException($"Monitors[{i}].Folders は空文字を含まない64件以内のフォルダー配列です。");
-                foreach (var folder in monitor.Folders.Append(monitor.Folder ?? "").Where(path => !string.IsNullOrWhiteSpace(path)))
-                    if (!Path.IsPathFullyQualified(folder.Trim()))
-                        throw new InvalidDataException($"Monitors[{i}] の画像フォルダーは絶対パスで指定してください。");
                 _ = monitor.SourceFolders().ToArray();
                 if (monitor.Mode is { } mode && !Enum.IsDefined(mode))
                     throw new InvalidDataException($"Monitors[{i}].Mode が不正です。");

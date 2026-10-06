@@ -8,6 +8,13 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--recycle-fixture") {
+            var path = Path.GetFullPath(args[1]);
+            if (!Path.GetFileName(path).StartsWith("WallpaperRecycleFixture-", StringComparison.Ordinal) || Path.GetExtension(path) != ".png")
+                throw new InvalidOperationException("Only an explicitly named temporary fixture is accepted.");
+            Applets.WallpaperSlideshow.ImageDeletion.Recycle(path);
+            Console.WriteLine("PASS: Windows recycle-only operation completed"); return;
+        }
         if (args.Length >= 1 && args[0] == "--performance") { PerformanceProbe.Run(args.Length > 1 ? args[1] : null); return; }
         if ((args.Length == 1 && args[0] == "--protocol-fixture") || Environment.GetEnvironmentVariable("APPDOCK_WALLPAPER_FIXTURE") == "1") {
             AppletTests.RunProtocolFixture(); return;

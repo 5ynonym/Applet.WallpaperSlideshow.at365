@@ -6,7 +6,7 @@ using DockPanel = AppDock.SDK.Panel;
 
 namespace Applets.WallpaperSlideshow;
 
-internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engine) : IAppDockExtension
+internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engine, Action<string>? deleteImage = null) : IAppDockExtension, IPanelActionHandler
 {
     private IExtensionContext? context;
     private IDisposable? subscription;
@@ -18,10 +18,25 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
     private HistoryManager.Entry[] visibleHistory = [];
     private PanelImage[] historyImages = [];
     private bool started;
+    private string? pendingDeletion;
+    private readonly SemaphoreSlim commandGate = new(1, 1);
+    private const int MaximumPageSize = 1000;
+    private int loadedPageSize = 4;
+    private int historyMonitor;
+    private readonly Dictionary<int, int> monitorPages = new();
+    private string? imageFolder;
+    private string[] imageFiles = [];
+    private string historyGeneration = "";
     public async Task ActivateAsync(IExtensionContext services, CancellationToken token)
     {
         context = services;
+        void Register(string id, string title, Func<CancellationToken, Task> action) => services.Commands.Register(id, title, async ct => {
+            await commandGate.WaitAsync(ct);
+            try { await action(ct); } finally { commandGate.Release(); }
+        });
         var options = SlideshowOptions.Read(services.Settings);
+        imageFolder = Path.Combine(await services.Ui.GetImageDirectoryAsync(token), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(imageFolder);
         await dispatcher.InvokeAsync(() => {
             options.Validate(StableScreensProvider.Screens.Select(s => s.Bounds));
             started = true;
@@ -29,38 +44,28 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
             config = options;
             fingerprint = SlideshowOptions.Fingerprint(options);
         }, token);
-        services.Commands.Register(services.ExtensionId + ".start", "壁紙スライドショーを開始", ct => PauseAsync(false, ct));
-        services.Commands.Register(services.ExtensionId + ".stop", "壁紙スライドショーを停止", ct => PauseAsync(true, ct));
-        services.Commands.Register(services.ExtensionId + ".next", "次の壁紙に更新", async ct => {
+        Register(services.ExtensionId + ".start", "壁紙スライドショーを開始／再開", ct => PauseAsync(false, ct));
+        Register(services.ExtensionId + ".stop", "壁紙スライドショーを停止", ct => PauseAsync(true, ct));
+        Register(services.ExtensionId + ".next", "次の壁紙に更新", async ct => {
             await dispatcher.InvokeAsync(engine.Next, ct); await PublishAsync(ct);
         });
-        services.Commands.Register(services.ExtensionId + ".pause", "壁紙スライドショーを一時停止", ct => PauseAsync(true, ct));
-        services.Commands.Register(services.ExtensionId + ".resume", "壁紙スライドショーを再開", ct => PauseAsync(false, ct));
-        services.Commands.Register(services.ExtensionId + ".toggle", "壁紙スライドショーの開始／停止を切り替え", ct => PauseAsync(!services.Settings.Get("paused", false), ct));
-        services.Commands.Register(services.ExtensionId + ".history", "最近使った壁紙を表示", ct => ShowHistoryAsync(0, ct));
-        services.Commands.Register(services.ExtensionId + ".history.previous", "壁紙履歴の前のページ", ct => ShowHistoryAsync(historyPage - 1, ct));
-        services.Commands.Register(services.ExtensionId + ".history.next", "壁紙履歴の次のページ", ct => ShowHistoryAsync(historyPage + 1, ct));
-        services.Commands.Register(services.ExtensionId + ".home", "壁紙の操作に戻る", async ct => {
-            historyVisible = false; historyImages = []; visibleHistory = []; await PublishAsync(ct);
+        Register(services.ExtensionId + ".toggle", "壁紙スライドショーの開始／停止を切り替え", ct => PauseAsync(!services.Settings.Get("paused", false), ct));
+        Register(services.ExtensionId + ".history", "最近使った壁紙を表示", ct => ShowHistoryAsync(0, ct));
+        Register(services.ExtensionId + ".history.previous", "壁紙履歴の前のページ", ct => ShowHistoryAsync(historyPage - 1, ct));
+        Register(services.ExtensionId + ".history.next", "壁紙履歴の次のページ", ct => ShowHistoryAsync(historyPage + 1, ct));
+        Register(services.ExtensionId + ".home", "壁紙の操作に戻る", async ct => {
+            pendingDeletion = null; historyVisible = false; historyImages = []; visibleHistory = []; await PublishAsync(ct); ClearImages();
         });
-        for (int i = 0; i < 4; i++) {
-            var slot = i;
-            services.Commands.Register(services.ExtensionId + ".history.open." + slot, $"壁紙履歴{slot + 1}を開く", async ct => {
-                await dispatcher.InvokeAsync(() => {
-                    if (slot >= visibleHistory.Length) throw new InvalidOperationException("履歴を更新してください。");
-                    var path = visibleHistory[slot].Path;
-                    if (!File.Exists(path)) throw new FileNotFoundException("画像が見つかりません。", path);
-                    Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
-                }, ct);
-            });
-        }
-        services.Commands.Register(services.ExtensionId + ".data", "壁紙のデータフォルダーを開く", async ct => {
+        Register(services.ExtensionId + ".data", "壁紙のデータフォルダーを開く", async ct => {
             await dispatcher.InvokeAsync(() => {
                 Directory.CreateDirectory(Const.AppDataFolder);
                 Process.Start(new ProcessStartInfo(Const.AppDataFolder) { UseShellExecute = true });
             }, ct);
         });
-        subscription = services.Settings.OnChanged(ApplyAsync);
+        subscription = services.Settings.OnChanged(async ct => {
+            await commandGate.WaitAsync(ct);
+            try { await ApplyAsync(ct); } finally { commandGate.Release(); }
+        });
         SystemEvents.DisplaySettingsChanged += DisplayChanged;
         ApplicationController.Instance.StateChanged += StateChanged;
         await PublishAsync(token);
@@ -79,13 +84,15 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
         if (services is null) return;
         try {
             var options = SlideshowOptions.Read(services.Settings);
+            var refreshHistory = (services.Settings.Get("historyPageSize", 4) != loadedPageSize);
             await dispatcher.InvokeAsync(() => {
                 options.Validate(StableScreensProvider.Screens.Select(s => s.Bounds));
                 var nextFingerprint = SlideshowOptions.Fingerprint(options);
-                if (nextFingerprint != fingerprint) { engine.Configure(options); fingerprint = nextFingerprint; config = options; }
+                if (nextFingerprint != fingerprint) { engine.Configure(options); fingerprint = nextFingerprint; config = options; refreshHistory = true; }
                 engine.Pause(services.Settings.Get("paused", false));
             }, token);
-            await PublishAsync(token);
+            if (refreshHistory && historyVisible && pendingDeletion is null) await ShowHistoryAsync(historyPage, token);
+            else await PublishAsync(token);
         } catch (Exception error) when (error is not OperationCanceledException) {
             AppLog.Error("AppDock設定の反映", error);
             await services.Log.ErrorAsync("設定を反映できません。前回の設定を維持します: " + error.Message, token);
@@ -96,14 +103,20 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
     {
         var services = context;
         if (services is null) return;
-        var panel = await dispatcher.InvokeAsync(() => historyVisible ? new DockPanel("最近使った壁紙",
-            $"{historyTotal}件 / {historyPage + 1}ページ目。履歴は実行中だけ保持します。",
+        var panel = await dispatcher.InvokeAsync(() => pendingDeletion is not null ? new DockPanel("画像を削除",
+            "この元画像をごみ箱へ移します。すべてのモニターの履歴からも取り除きます。",
+            new[] { new PanelFact("対象ファイル", pendingDeletion) }, new[] {
+                HistoryAction("ごみ箱へ移す", "delete.confirm"),
+                HistoryAction("キャンセル", "delete.cancel"),
+            }) : historyVisible ? new DockPanel("最近使った壁紙",
+            $"モニター{historyMonitor + 1}: {historyTotal}件 / {historyPage + 1}ページ目。履歴は実行中だけ保持します。",
             Facts: Array.Empty<PanelFact>(), Actions: new[] {
                 new PanelAction("前のページ", services.ExtensionId + ".history.previous"),
                 new PanelAction("次のページ", services.ExtensionId + ".history.next"),
                 new PanelAction("履歴を更新", services.ExtensionId + ".history"),
                 new PanelAction("壁紙の操作に戻る", services.ExtensionId + ".home"),
-            }) { Images = historyImages } : new DockPanel("壁紙スライドショー",
+            }) { Images = historyImages, Tabs = Enumerable.Range(0, HistoryManager.Instance.MonitorCount)
+                .Select(monitor => HistoryAction($"モニター{monitor + 1}" + (monitor == historyMonitor ? "（表示中）" : ""), "monitor." + monitor) with { Selected = monitor == historyMonitor }).ToArray() } : new DockPanel("壁紙スライドショー",
             error is null ? "モニターごとの画像フォルダーから、重複なしで壁紙を切り替えます。" : "設定エラー: " + error,
             new[] {
                 new PanelFact("状態", engine.IsPaused ? "停止中（手動停止・ロック・リモート接続）" : "再生中"),
@@ -112,7 +125,7 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
                 new PanelFact("画像ソース", string.Join(" / ", config?.Monitors.Select((m, i) => $"{i + 1}: {m.SourceFolders().Count()}フォルダー") ?? [])),
                 new PanelFact("バージョン", typeof(WallpaperApplet).Assembly.GetName().Version!.ToString(3)),
             }, new[] {
-                new PanelAction("開始", services.ExtensionId + ".start"),
+                new PanelAction("開始／再開", services.ExtensionId + ".start"),
                 new PanelAction("停止", services.ExtensionId + ".stop"),
                 new PanelAction("開始／停止を切り替え", services.ExtensionId + ".toggle"),
                 new PanelAction("次の壁紙に更新", services.ExtensionId + ".next"),
@@ -123,35 +136,85 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
     }
     private async Task ShowHistoryAsync(int page, CancellationToken token)
     {
+        pendingDeletion = null;
+        historyGeneration = Guid.NewGuid().ToString("N");
+        var pageSize = Math.Clamp(context?.Settings.Get("historyPageSize", 4) ?? 4, 1, MaximumPageSize);
+        loadedPageSize = pageSize;
         var entries = await dispatcher.InvokeAsync(() => {
-            var all = HistoryManager.Instance.Snapshot();
+            historyMonitor = Math.Clamp(historyMonitor, 0, Math.Max(0, HistoryManager.Instance.MonitorCount - 1));
+            var all = HistoryManager.Instance.Snapshot().Where(entry => entry.Monitor == historyMonitor).ToArray();
             historyTotal = all.Length;
-            historyPage = Math.Clamp(page, 0, Math.Max(0, (all.Length - 1) / 4));
-            return all.Skip(historyPage * 4).Take(4).ToArray();
+            historyPage = Math.Clamp(page, 0, Math.Max(0, (all.Length - 1) / pageSize));
+            monitorPages[historyMonitor] = historyPage;
+            return all.Skip(historyPage * pageSize).Take(pageSize).ToArray();
         }, token);
-        var size = new Size(Math.Min(config?.History.ThumbnailWidth ?? 320, 320), Math.Min(config?.History.ThumbnailHeight ?? 240, 240));
-        var extensionId = context?.ExtensionId ?? throw new InvalidOperationException("Appletは停止しています。");
-        var images = await Task.Run(() => entries.Select((entry, i) => {
+        var size = new Size(config?.History.ThumbnailWidth ?? 480, config?.History.ThumbnailHeight ?? 360);
+        if (context is null) throw new InvalidOperationException("Appletは停止しています。");
+        var nextFiles = new List<string>();
+        PanelImage[] images;
+        try { images = await Task.Run(() => entries.Select((entry, i) => {
             token.ThrowIfCancellationRequested();
             using var thumbnail = ThumbnailResult.Load(entry.Path, size, token);
-            string? image = null;
+            string? file = null;
             if (thumbnail.Image is not null) {
-                using var stream = new MemoryStream();
-                thumbnail.Image.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg);
-                var encoded = "data:image/jpeg;base64," + Convert.ToBase64String(stream.ToArray());
-                if (encoded.Length <= 200000) image = encoded;
+                file = Path.Combine(imageFolder!, Guid.NewGuid().ToString("N") + ".png");
+                nextFiles.Add(file);
+                thumbnail.Image.Save(file, System.Drawing.Imaging.ImageFormat.Png);
             }
             var name = Path.GetFileName(entry.Path);
-            var maximum = Math.Min(config?.History.MaxFileNameLength ?? 30, 160);
+            var maximum = config?.History.MaxFileNameLength ?? 30;
             if (name.Length > maximum) name = name[..maximum] + "…";
             return new PanelImage($"モニター{entry.Monitor + 1}: {name}",
-                $"{thumbnail.Resolution} / {thumbnail.SizeText}", image,
-                new[] { new PanelAction("画像を開く", extensionId + ".history.open." + i) });
-        }).ToArray(), token);
-        token.ThrowIfCancellationRequested();
+                $"{thumbnail.Resolution} / {thumbnail.SizeText}", null,
+                new[] { HistoryAction("画像を開く", "open." + i),
+                    HistoryAction("画像を削除", "delete." + i) }) { Tooltip = entry.Path, ImageFile = file };
+        }).ToArray(), token); }
+        catch { foreach (var file in nextFiles) TryDelete(file); throw; }
+        if (token.IsCancellationRequested) { foreach (var file in nextFiles) TryDelete(file); token.ThrowIfCancellationRequested(); }
+        ClearImages(); imageFiles = nextFiles.ToArray();
         visibleHistory = entries; historyImages = images; historyVisible = true;
         await PublishAsync(token);
     }
+    private PanelAction HistoryAction(string title, string action) => new(title, "") {
+        ActionId = context!.ExtensionId + "." + historyGeneration + "." + action
+    };
+    public async Task HandlePanelActionAsync(string actionId, CancellationToken token) {
+        await commandGate.WaitAsync(token);
+        try {
+            var prefix = context?.ExtensionId + "." + historyGeneration + ".";
+            if (!historyVisible || !actionId.StartsWith(prefix, StringComparison.Ordinal))
+                throw new InvalidOperationException("履歴を更新してください。");
+            var action = actionId[prefix.Length..];
+            if (action == "delete.confirm") {
+                var path = pendingDeletion ?? throw new InvalidOperationException("履歴から削除する画像を選んでください。");
+                await Task.Run(() => { token.ThrowIfCancellationRequested(); if (File.Exists(path)) (deleteImage ?? ImageDeletion.Recycle)(path); }, token);
+                await dispatcher.InvokeAsync(() => HistoryManager.Instance.Remove(path), token);
+                pendingDeletion = null;
+                await ShowHistoryAsync(historyPage, token);
+            } else if (action == "delete.cancel") await ShowHistoryAsync(historyPage, token);
+            else {
+                var parts = action.Split('.');
+                if (parts.Length != 2 || !int.TryParse(parts[1], out var slot) || slot < 0) throw new InvalidOperationException("操作が不正です。");
+                if (parts[0] == "monitor") { await SelectMonitorAsync(slot, token); return; }
+                if (slot >= visibleHistory.Length) throw new InvalidOperationException("履歴を更新してください。");
+                var path = visibleHistory[slot].Path;
+                if (parts[0] == "open") await dispatcher.InvokeAsync(() => {
+                    if (!File.Exists(path)) throw new FileNotFoundException("画像が見つかりません。", path);
+                    Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+                }, token);
+                else if (parts[0] == "delete") { pendingDeletion = path; await PublishAsync(token); }
+                else throw new InvalidOperationException("操作が不正です。");
+            }
+        } finally { commandGate.Release(); }
+    }
+    private Task SelectMonitorAsync(int monitor, CancellationToken token) {
+        historyMonitor = Math.Clamp(monitor, 0, Math.Max(0, HistoryManager.Instance.MonitorCount - 1));
+        return ShowHistoryAsync(monitorPages.GetValueOrDefault(historyMonitor), token);
+    }
+    private static void TryDelete(string file) {
+        try { File.Delete(file); } catch (Exception error) { Console.Error.WriteLine(error.Message); }
+    }
+    private void ClearImages() { foreach (var file in imageFiles) TryDelete(file); imageFiles = []; }
     private async void DisplayChanged(object? sender, EventArgs e) => await RefreshStateAsync();
     private async void StateChanged() => await RefreshStateAsync();
     private async Task RefreshStateAsync() {
@@ -165,7 +228,12 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
         ApplicationController.Instance.StateChanged -= StateChanged;
         context = null;
         await dispatcher.InvokeAsync(() => {
-            historyImages = []; visibleHistory = []; historyVisible = false;
+            pendingDeletion = null; historyImages = []; visibleHistory = []; historyVisible = false;
+            ClearImages();
+            if (imageFolder is not null) {
+                try { Directory.Delete(imageFolder); } catch (Exception error) { Console.Error.WriteLine(error.Message); }
+                imageFolder = null;
+            }
             if (started) { engine.Stop(); started = false; }
         }, CancellationToken.None);
     }
