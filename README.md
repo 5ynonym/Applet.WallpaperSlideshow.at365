@@ -2,6 +2,16 @@
 
 WallpaperSlideshow.at365をAppDockへ移したWindows用Appletです。**v0.3.0 / AppDock v0.6.0以降が必要**です。
 
+## 導入・更新
+
+1. AppDockをトレイの「終了」から完全終了します。
+2. 配布物の `extension.json`、`Applet.WallpaperSlideshow.at365.exe` を、AppDock.at365.exeの隣の `extensions/Applet.WallpaperSlideshow.at365/` に配置します。更新時も配布物一式をそろえて置き換えてください。
+3. AppDockを起動し、「Applet」一覧で有効にします。操作やキーの割り当てはAppDockから行います。
+
+利用するPCにはAppDockの動作環境が必要です。詳細は[AppDockの導入案内](../AppDock.at365/README.md)を参照してください。
+
+このAppletの配布EXEには必要なランタイムが含まれています。元のWallpaperSlideshowと同時に再生しないでください。
+
 ## 設定
 
 AppDockの「設定」→「Applet.WallpaperSlideshow.at365」で、JSONを直接書かずに設定できます。
@@ -20,7 +30,7 @@ AppDockの「設定」→「Applet.WallpaperSlideshow.at365」で、JSONを直�
 
 AppDock共通の「開始までの秒数」は**既定30秒**。有効化・AppDock起動・Applet再起動から指定秒数後に、Appletのプロセス自体を起動します。0で即時、最大86400秒。開始待ちの画面に予定時刻と「今すぐ開始」を表示します。無効化・AppDock終了で予約を取り消し、待機中の秒数変更ではそこから待ち直します。
 
-コマンドはAppDockのパレット・ピン留め・ショートカットで使用します。manifestで宣言したコマンドはロード前から設定できます。「開始／再開」と「開始／停止切り替え」を明示的に実行すると、無効・開始待ちのAppletも有効化して即時起動します。
+コマンドはAppDockのパレット・ピン留め・ショートカットで使用します。開始・停止などのコマンドはAppletの起動前からキーを設定できます。「開始／再開」と「開始／停止切り替え」を明示的に実行すると、無効・開始待ちのAppletも有効化して即時起動します。
 
 | ID末尾 | 操作 |
 | --- | --- |
@@ -43,17 +53,13 @@ IDの接頭辞は`at365.wallpaper-slideshow.`です。旧`resume`は`start`、�
 
 各画像にサムネイル、解像度・ファイルサイズ、元ファイルパスのツールチップ、「画像を開く」「画像を削除」を表示します。サムネイルをクリックすると拡大表示できます。削除は対象の元ファイルを確認する画面を表示し、「ごみ箱へ移す」で実行します。キャンセルも可能です。成功時は同じパスをすべてのモニターの履歴から除き、表示を更新します。古いページのボタンでは別の画像を操作できません。
 
-Windowsの[IFileOperationのごみ箱指定](https://learn.microsoft.com/ja-jp/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifileoperation-setoperationflags)を使用します。削除失敗時はファイルと履歴を維持します。ごみ箱へ移せない環境ではエラーになります。
+削除失敗時はファイルと履歴を維持します。ごみ箱へ移せない環境ではエラーになります。
 
-## 負荷とデータ
+## データの保存先
 
-画像の走査・合成は直列に実行し、更新を重ねず、キャンセル済みの結果を適用しません。設定が同じなら描画をやり直さず、監視の保守は5秒間隔です。抽選のシャッフルは線形時間。タイル画像は1枚ずつ読み込み・縮小・解放し、全タイルの原寸画像を同時に保持しません。
+一時BMPと`errors.log`は`%AppData%\at365\Applets\WallpaperSlideshow`、履歴サムネイルはAppDockの`.appdock/cache/panel-images`内に保存します。元アプリのデータとは分離しています。履歴の画像は指定サイズで表示し、ページ変更・操作画面へ戻る・終了時にサムネイルを削除します。強制終了時のキャッシュが残ることはあります。
 
-履歴画像は選択したモニターの表示ページだけ順次生成します。指定サイズのPNGをローカルファイルとして読み込み、通信量による画質・解像度の縮小は行いません。ページ変更・操作画面へ戻る・終了時にサムネイルを削除します。ブラウザー側でも画面外の画像を遅延読み込みします。専用トレイアイコン・トレイ項目・履歴ウィンドウは作りません。
-
-一時BMPと`errors.log`は`%AppData%\at365\Applets\WallpaperSlideshow`、履歴サムネイルはAppDockの`.appdock/cache/panel-images`内に保存します。強制終了時のキャッシュが残ることはあります。元アプリのデータとは分離しています。描画の実測と検証範囲は[VERIFICATION.md](VERIFICATION.md)を参照してください。
-
-## バージョン確認とビルド
+## 手動設定の例・更新の確認
 
 保存されるモニター設定の形式例です。通常の設定操作には上記のフォームを使ってください。
 
@@ -64,17 +70,8 @@ Windowsの[IFileOperationのごみ箱指定](https://learn.microsoft.com/ja-jp/w
 ]
 ```
 
-manifestの`minimumHostVersion: "0.6.0"`に満たないAppDockではロードしません。AppDock本体と各Appletの「更新を確認」は手動でGitHubの正式リリースを調べます。Appletの問い合わせ先は`5ynonym/Applet.WallpaperSlideshow.at365`です。自動ダウンロード・更新は行いません。
+AppDock 0.6.0未満では利用できません。AppDock本体と各Appletの「更新を確認」は手動でGitHubの正式リリースを調べます。Appletの問い合わせ先は`5ynonym/Applet.WallpaperSlideshow.at365`です。自動ダウンロード・更新は行いません。
 
-Windows、.NET 10 SDK、隣の`AppDock.at365`ソースが必要です。
+---
 
-```powershell
-dotnet build Applet.WallpaperSlideshow.at365.slnx -c Release
-dotnet run --project Applet.WallpaperSlideshow.RegressionTests -c Release
-.\publish.bat
-.\deploy.bat "C:\Tools\AppDock"
-```
-
-発行EXEはwin-x64・自己完結型です。AppDock EXE隣の`extensions/Applet.WallpaperSlideshow.at365`へ配置します。引数なしの`deploy.bat`はGit除外の`deploy.local.txt`先頭行、なければ兄弟AppDockの`publish`へ配置します。スクリプトは実行中アプリを強制終了しません。AppDockを起動し直すと認識します。
-
-`scripts/test-protocol.cjs` / `scripts/test-ui.cjs`はテスト専用エンジンと一時画像を使用し、ユーザーの壁紙・画像フォルダーを変更しません。
+開発・ビルドについては[開発ガイド](DEVELOPMENT.md)を参照してください。
