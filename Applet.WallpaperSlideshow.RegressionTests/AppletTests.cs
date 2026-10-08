@@ -69,6 +69,7 @@ internal static class AppletTests
     }
     private sealed class FixtureEngine(string folder) : ISlideshowController
     {
+        private int backgroundApplications;
         public bool IsPaused { get; private set; }
         public void Start(Config config, bool paused) {
             IsPaused = paused;
@@ -80,6 +81,12 @@ internal static class AppletTests
         public void Configure(Config config) { HistoryManager.Instance.SetConfig(config); }
         public void Pause(bool paused) { IsPaused = paused; }
         public void Next() { if (!IsPaused) Console.Error.WriteLine("FIXTURE_NEXT_WALLPAPER"); }
+        public void PrepareWindowsBackground() {
+            Thread.Sleep(750); // Exercise the UI's in-flight state without touching the desktop.
+            if (++backgroundApplications > 1) throw new InvalidOperationException("fixture background failure");
+            Console.Error.WriteLine("FIXTURE_PREPARE_BACKGROUND " + IsPaused);
+        }
+        public void OpenWindowsBackgroundSettings() { Console.Error.WriteLine("FIXTURE_OPEN_BACKGROUND_SETTINGS"); }
         public void Stop() { }
     }
     public static void RunProtocolFixture()

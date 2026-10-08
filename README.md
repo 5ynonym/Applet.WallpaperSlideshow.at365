@@ -1,6 +1,6 @@
 # Applet.WallpaperSlideshow.at365
 
-WallpaperSlideshow.at365をAppDockへ移したWindows用Appletです。**v0.3.0 / AppDock v0.6.0以降が必要**です。
+WallpaperSlideshow.at365をAppDockへ移したWindows用Appletです。**v0.4.0 / AppDock v0.21.0以降が必要**です。
 
 ## 導入・更新
 
@@ -15,6 +15,10 @@ WallpaperSlideshow.at365をAppDockへ移したWindows用Appletです。**v0.3.0 
 ## 設定
 
 AppDockの「設定」→「Applet.WallpaperSlideshow.at365」で、JSONを直接書かずに設定できます。
+
+Windowsの背景は **「画像」・「スパン」** にしてください。Appletを開始すると、設定ページの **「Windowsの背景を『画像・スパン』に設定」** ボタンで適用できます。成功・失敗はボタンの近くに表示します。未保存のApplet設定や再生・停止状態は変更しません。停止中は黒い背景を保ちます。これはWindows側の設定を変更する操作で、Appletを終了しても元の背景種類・調整方法へは戻しません。
+
+手動では **Windowsの「設定」→「個人用設定」→「背景」** を開き、背景を **「画像」**、画像の調整を **「スパン」** にしてください。隣の「Windowsの背景設定を開く」ボタンも使えます。WindowsのスライドショーやSpotlightと併用せず、適用エラーのときはこの手順で確認してください。現在の壁紙を取得できないときは、壁紙の表示を待つか手動で設定してください。
 
 - 「モニターを追加」で画面ごとの設定を作成。左から右、同じX位置では上から下の順です。並べ替え・削除も可能です。
 - モニターごとに画像ソースフォルダーを複数追加でき、Windowsのフォルダー選択も使えます。各64件まで。旧設定の単一`Folder`やJSON文字列も読み取り、編集時に`Folders`へ移します。
@@ -42,6 +46,8 @@ AppDock共通の「開始までの秒数」は**既定30秒**。有効化・AppD
 | `history.previous` / `history.next` | 選択中モニターの履歴をページ送り |
 | `home` | 壁紙の操作画面に戻る |
 | `data` | データフォルダーを開く |
+| `prepare-background` | Windowsの背景を「画像・スパン」に設定。再生・停止状態を維持 |
+| `background-settings` | Windowsの「個人用設定 → 背景」を開く |
 
 IDの接頭辞は`at365.wallpaper-slideshow.`です。旧`resume`は`start`、旧`pause`は`stop`の別名として既存ショートカットを維持します。未割り当ての別名を新規コマンド一覧に重複表示しません。画像ごとの「履歴1を開く」等はコマンド登録せず、履歴ビュー専用のボタンで処理します。
 
@@ -57,7 +63,7 @@ IDの接頭辞は`at365.wallpaper-slideshow.`です。旧`resume`は`start`、�
 
 ## データの保存先
 
-一時BMPと`errors.log`は`%AppData%\at365\Applets\WallpaperSlideshow`、履歴サムネイルはAppDockの`.appdock/cache/panel-images`内に保存します。元アプリのデータとは分離しています。履歴の画像は指定サイズで表示し、ページ変更・操作画面へ戻る・終了時にサムネイルを削除します。強制終了時のキャッシュが残ることはあります。
+背景設定ボタンが保存する`windows-background.bmp`、一時BMPと`errors.log`は`%AppData%\at365\Applets\WallpaperSlideshow`、履歴サムネイルはAppDockの`.appdock/cache/panel-images`内に保存します。元アプリのデータとは分離しています。履歴の画像は指定サイズで表示し、ページ変更・操作画面へ戻る・終了時にサムネイルを削除します。強制終了時のキャッシュが残ることはあります。
 
 ## 手動設定の例・更新の確認
 
@@ -70,7 +76,7 @@ IDの接頭辞は`at365.wallpaper-slideshow.`です。旧`resume`は`start`、�
 ]
 ```
 
-AppDock 0.6.0未満では利用できません。AppDock本体と各Appletの「更新を確認」は手動でGitHubの正式リリースを調べます。Appletの問い合わせ先は`5ynonym/Applet.WallpaperSlideshow.at365`です。自動ダウンロード・更新は行いません。
+AppDock 0.21.0未満では利用できません。AppDock本体と各Appletの「更新を確認」は手動でGitHubの正式リリースを調べます。Appletの問い合わせ先は`5ynonym/Applet.WallpaperSlideshow.at365`です。自動ダウンロード・更新は行いません。
 
 ---
 

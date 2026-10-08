@@ -8,6 +8,10 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        if (args.Length == 1 && args[0] == "--inspect-background") {
+            using var api = new Applets.WallpaperSlideshow.WindowsBackground.DesktopBackgroundApi();
+            Console.WriteLine(JsonSerializer.Serialize(new { picture = api.IsPicture, span = api.IsSpan })); return;
+        }
         if (args.Length == 2 && args[0] == "--recycle-fixture") {
             var path = Path.GetFullPath(args[1]);
             if (!Path.GetFileName(path).StartsWith("WallpaperRecycleFixture-", StringComparison.Ordinal) || Path.GetExtension(path) != ".png")
@@ -34,6 +38,7 @@ internal static class Program
         try
         {
             AppletTests.Run(testData);
+            BackgroundTests.Run(testData);
             ValidateConfiguration();
             ValidateReadme();
             KeepLastValidConfiguration();

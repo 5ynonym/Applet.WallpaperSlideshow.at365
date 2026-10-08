@@ -10,6 +10,8 @@ internal interface ISlideshowController
     void Configure(Config config);
     void Pause(bool paused);
     void Next();
+    void PrepareWindowsBackground();
+    void OpenWindowsBackgroundSettings();
     void Stop();
 }
 internal sealed class SlideshowController(DispatcherForm dispatcher) : ISlideshowController
@@ -23,5 +25,8 @@ internal sealed class SlideshowController(DispatcherForm dispatcher) : ISlidesho
     public void Configure(Config config) => ApplicationController.Instance.Configure(config);
     public void Pause(bool paused) => ApplicationController.Instance.TogglePause(paused);
     public void Next() => ApplicationController.Instance.Next();
+    public void PrepareWindowsBackground() => WindowsBackground.Apply(IsPaused);
+    public void OpenWindowsBackgroundSettings() => System.Diagnostics.Process.Start(
+        new System.Diagnostics.ProcessStartInfo("ms-settings:personalization-background") { UseShellExecute = true });
     public void Stop() { if (started) { ApplicationController.Instance.PrepareShutdown(); started = false; } }
 }

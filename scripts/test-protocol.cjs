@@ -27,7 +27,7 @@ const fixture = path.join(root, 'Applet.WallpaperSlideshow.RegressionTests/bin/R
   try {
     const result = await peer.request('activate', { id: 'at365.wallpaper-slideshow', settings });
     assert.equal(result.tray.length, 0);
-    assert.equal(result.commands.length, 9);
+    assert.equal(result.commands.length, 11);
     assert.equal(result.commands.some(command => command.id.endsWith('.resume')), false);
     for (const [suffix, title] of [['start', '壁紙スライドショーを開始／再開'], ['stop', '壁紙スライドショーを停止'],
       ['toggle', '壁紙スライドショーの開始／停止を切り替え'], ['next', '次の壁紙に更新']]) {
@@ -36,6 +36,12 @@ const fixture = path.join(root, 'Applet.WallpaperSlideshow.RegressionTests/bin/R
     assert.deepEqual(panel.actions.slice(0, 4).map((action) => action.title), ['開始／再開', '停止', '開始／停止を切り替え', '次の壁紙に更新']);
     assert.equal(panel.facts.find((fact) => fact.label === '状態').value, '再生中');
     await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.stop' });
+    assert.equal(settings.paused, true);
+    await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.prepare-background' });
+    assert.equal(settings.paused, true, 'background preparation preserves manual pause');
+    await assert.rejects(peer.request('command.execute', { id: 'at365.wallpaper-slideshow.prepare-background' }), /fixture background failure/);
+    assert.equal(settings.paused, true, 'failed background preparation preserves manual pause');
+    await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.background-settings' });
     assert.equal(settings.paused, true);
     await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.next' });
     assert.equal(diagnostics.includes('FIXTURE_NEXT_WALLPAPER'), false);

@@ -49,6 +49,15 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
         Register(services.ExtensionId + ".next", "次の壁紙に更新", async ct => {
             await dispatcher.InvokeAsync(engine.Next, ct); await PublishAsync(ct);
         });
+        Register(services.ExtensionId + ".prepare-background", "Windowsの背景を「画像・スパン」に設定", async ct => {
+            try { await dispatcher.InvokeAsync(engine.PrepareWindowsBackground, ct); }
+            catch (Exception error) when (error is not OperationCanceledException) {
+                AppLog.Error("Windowsの背景設定", error);
+                throw new InvalidOperationException("背景設定に失敗しました。" + error.Message + " " + WindowsBackground.ManualInstructions, error);
+            }
+        });
+        Register(services.ExtensionId + ".background-settings", "Windowsの背景設定を開く",
+            ct => dispatcher.InvokeAsync(engine.OpenWindowsBackgroundSettings, ct));
         Register(services.ExtensionId + ".toggle", "壁紙スライドショーの開始／停止を切り替え", ct => PauseAsync(!services.Settings.Get("paused", false), ct));
         Register(services.ExtensionId + ".history", "最近使った壁紙を表示", ct => ShowHistoryAsync(0, ct));
         Register(services.ExtensionId + ".history.previous", "壁紙履歴の前のページ", ct => ShowHistoryAsync(historyPage - 1, ct));

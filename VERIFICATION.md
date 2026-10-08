@@ -86,3 +86,14 @@
 
 - 対応AppDock EXE: v0.6.0、100,413,527 bytes、SHA256 DB616106277E010FAC5E1D593504E0DA62C1027BABD193F3DC2C42F0082C1C9B。
 - 実利用先 `A:\00.ESSENTIAL\00.MainTools\AppDock.at365` のAppDock v0.6.0と壁紙Applet v0.3.0へ配置。ユーザーが設定を保存してAppDockを完全終了してから実施した。ホストEXE・Applet EXE・manifestのSHA256は発行元と一致し、既存settings.jsonは前後のSHA256が同一。
+
+## 2026-10-08: 0.4.0 Windowsの背景設定
+
+- 必要AppDockを0.21.0へ更新。設定ページに「Windowsの背景を『画像・スパン』に設定」と「Windowsの背景設定を開く」を追加し、近くに手動手順を表示。
+- Release build（警告0/エラー0）、全既存回帰＋BackgroundTests、test-protocol.cjs、publish.bat成功。BackgroundTestsはキャッシュの画像保持、停止中の黒背景、種類/スパン不一致、API失敗、キャッシュ欠落、COM解放/一時ファイル整理をfakeで確認。
+- 通信fixtureは背景設定の成功/失敗と停止維持、背景設定ページを開くコマンドを確認。既存の開始/停止/次/設定エラー維持/モニター別履歴/削除/終了も成功。
+- 最終AppDock0.21.0の配布GUI: `artifacts/background-settings-1791464780421/result.json`、ok:true。手動案内、実行中無効化、成功/失敗表示、未保存入力/停止状態保持、設定データに操作情報が入らないこと、停止時ボタン無効化、900×720 DIP横はみ出しなしを確認。success/small画像を目視確認。
+- 実Windows COMの読み取り: --inspect-backgroundでpicture:true/span:true。実際の壁紙・Windows設定は変更していない。Windowsスライドショー/Spotlight/単色から画像への実切替、組織ポリシー/RDP制限、実設定ページを開く操作は未確認。BackgroundTypeとThemesキャッシュはWindows実装に依存し、API/状態確認が失敗すれば手動手順付きエラーを返す。
+- 発行manifestはソースとSHA256一致。実利用先deploy、commit、pushなし。
+- 初回sandboxの.NET buildは理由を伴わず失敗したが、許可された通常Windows環境でbuild/回帰/publish成功。
+- 最終Applet EXE: 51705880 bytes、SHA256 4462DD32341C2F57F11EA2315009F146526838FFF4FDA1B1F6EBB0BED985BFD0。

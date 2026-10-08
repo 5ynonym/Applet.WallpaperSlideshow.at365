@@ -17,6 +17,18 @@ dotnet run --project Applet.WallpaperSlideshow.RegressionTests -c Release
 
 `scripts/test-protocol.cjs` / `scripts/test-ui.cjs`はテスト専用エンジンと一時画像を使用し、ユーザーの壁紙・画像フォルダーを変更しません。
 
+## Windows背景の準備（0.4.0）
+
+AppDock0.21.0のsettingActionsからprepare-background/background-settingsコマンドを呼びます。再生・停止設定は変更せず、STAのdispatcherと既存commandGateで直列化します。実設定ボタンは自動実行しません。
+
+IDesktopWallpaper.SetWallpaper/SetPosition(DWPOS_SPAN)と、HKCUのExplorer/WallpapersにあるBackgroundType=0（画像）の設定を組み合わせます。BackgroundTypeはWindows設定画面の実装に依存する値で、公開APIとして保証されていません。適用後は種類の読み戻し、GetStatusのDSS_SLIDESHOWがないこと、GetPositionのスパンを確認し、不一致/API失敗では手動手順付きエラーを返します。
+
+現在表示中の壁紙はWindowsのThemes/TranscodedWallpaperキャッシュからBMPへコピーします。元のwallpaper.bmpは適用後に黒く上書きするので再適用しません。停止中は1px黒画像を設定し、停止状態を保ちます。windows-background.bmpはWindowsが参照するため維持します。キャッシュ欠落/破損では背景APIを呼ばず、手動設定を案内します。
+
+`dotnet run --project Applet.WallpaperSlideshow.RegressionTests -c Release -- --inspect-background` はCOMの読み取りだけを確認します。回帰は画像/停止状態/結果不一致/API失敗をfakeで検証します。`scripts/test-background-settings-ui.cjs`は発行版AppDock＋native fixtureで、実壁紙を変更せずフォームと実コマンド経路を確認します。Windowsスライドショー/Spotlightからの実切替はこれらの試験とは別です。
+
+参考: [SetPosition](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-idesktopwallpaper-setposition)、[GetStatus](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-idesktopwallpaper-getstatus)、[Windows設定URI](https://learn.microsoft.com/en-us/windows/apps/develop/launch/launch-settings)。
+
 ## 画像処理・キャッシュの実装
 
 画像の走査・合成は直列に実行し、更新を重ねず、キャンセル済みの結果を適用しません。設定が同じなら描画をやり直さず、監視の保守は5秒間隔です。抽選のシャッフルは線形時間。タイル画像は1枚ずつ読み込み・縮小・解放し、全タイルの原寸画像を同時に保持しません。
