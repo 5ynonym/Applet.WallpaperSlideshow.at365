@@ -1,5 +1,19 @@
 # 検証記録
 
+## 2026-10-08: 実利用先へのdeploy
+
+- 配置後の実利用について、ユーザーが正常動作を確認したと報告（2026-10-08）。
+
+- ユーザーの明示指示により、AppDockと全6Appletの`deploy.bat`を引数なしで実行し、7件すべて終了コード0。配置先は`A:\00.ESSENTIAL\00.MainTools\AppDock.at365`。5つの.NET Appletは現ソース/SDKで`publish.bat`を先に実行し、Gmailはdeploy内で再発行した。
+- AppDock0.16.2、Gmail0.5.1、WallpaperSlideshow0.3.0、Watch0.1.1（native）、WebBrowserTools0.2.4、WindowMover0.2.1、WindowsTools0.1.1を配置。Watchの古いDLL版manifestを配置せず、現ソースのnative版へ更新。
+- 配置対象21ファイルのSHA256はすべて発行元と一致。現ソースと配置manifestの版/runtime/entry、minimumHostVersionも照合。settings.json・avatar.png・Gmail accounts.jsonの3ファイルは配置前後のハッシュ不変。
+- 配置前後とも関連プロセスなし。実利用アプリは起動していないため、次回起動で反映する。旧ファイル退避は行わず、設定・認証領域を配置スクリプトで変更していない。結果は`../AppDock.at365/artifacts/deploy-2026-10-08-result.json`（本体では`artifacts/deploy-2026-10-08-result.json`）。
+
+## 2026-10-08: 依存パッケージ確認
+
+- 外部NuGet PackageReferenceなし。slnxの`dotnet list package --outdated`も更新なし。依存定義や製品コード・版の変更は不要。参照するAppDockのnpm更新詳細は[本体検証記録](../AppDock.at365/VERIFICATION.md)を参照。
+- 現AppDock SDK/RuntimeでRelease build警告0/エラー0、既存RegressionTests成功。実アプリ/ハードウェアに作用するnative検証、publish/deployは今回実施していない。
+
 2026-10-06 JST。Applet.WallpaperSlideshow.at365 v0.1.0 / AppDock v0.5.0。
 
 ## 成功した確認
@@ -69,5 +83,6 @@
 - 最新Applet EXE: ProductVersion 0.3.0、51,703,190 bytes、SHA256 01A12DE0131FDE033C3DD1F3CAC90837D3D0F81F9365FB4E871C5DEAD6E34293。
 
 実際のユーザー壁紙の切り替え、ロック/RDP、共有の切断復帰は今回のUIテストでは操作していない。前節の描画・監視・停止理由の回帰で確認し、実機検証の境界は維持する。
+
 - 対応AppDock EXE: v0.6.0、100,413,527 bytes、SHA256 DB616106277E010FAC5E1D593504E0DA62C1027BABD193F3DC2C42F0082C1C9B。
 - 実利用先 `A:\00.ESSENTIAL\00.MainTools\AppDock.at365` のAppDock v0.6.0と壁紙Applet v0.3.0へ配置。ユーザーが設定を保存してAppDockを完全終了してから実施した。ホストEXE・Applet EXE・manifestのSHA256は発行元と一致し、既存settings.jsonは前後のSHA256が同一。
