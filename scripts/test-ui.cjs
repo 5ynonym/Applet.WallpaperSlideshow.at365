@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..');
 const host = path.resolve(root, '../AppDock.at365');
 const { _electron: electron } = require(path.join(host, 'node_modules/playwright'));
-const profile = path.join(root, 'artifacts', `ui-${Date.now()}`);
+const profile = path.join(root, '.artifacts', `ui-${Date.now()}`);
 const folder = path.join(profile, 'extensions', 'wallpaper');
 const fixture = path.join(root, 'Applet.WallpaperSlideshow.RegressionTests/bin/Release/net10.0-windows');
 fs.mkdirSync(folder, { recursive: true });

@@ -1,6 +1,6 @@
 **/bin/
 **/obj/
 publish/
-artifacts/
+.artifacts/
 deploy.local.txt
 *.user

@@ -1,5 +1,13 @@
 # 検証記録
 
+## 2026-10-10: 開発生成物を`.artifacts`へ改名
+
+- ユーザー指定でartifacts→.artifactsを改名。移動直後に既存1876項目の相対パス/size/mtime/ディレクトリ・リンク属性が一致し、検証終了時も元の全項目のsize/mtime/属性が不変。配布物4ファイルのSHA256も検証前後で一致。保存済みログ/JSONは内部パスを含めて保持し、過去記録の当repoのartifacts/は.artifacts/へ読み替える。
+- テスト/開発用の参照とGit除外/開発手順を更新。6repo合計の変更CJS18件の構文、Gmail start-dev.ps1の構文/UTF-8 BOM、各repoのgit diff --checkが成功。旧artifactsの再生成なし、新.artifactsのGit除外を確認。
+- 既存.NET回帰5群成功、scripts/test-protocol.cjsのfixture7群と発行済みnativeの不正設定拒否/終了確認成功。実利用の壁紙は変更していない。
+- ログは.artifacts/rename-20261010-regression.log。Gmail/Wallpaper/Watchの元の統合試験ログは.artifacts/rename-20261010-integration.log。残りの開始/停止確認の再現スクリプト/ログはA:/XX.TEMP/applets-artifacts-rename-startstop-20261010.cjsと同.log。確認スクリプトのsnapshot非同期取得/待機の途中失敗は修正し、最終は4件すべて終了0。棚卸し/最終照合はA:/XX.TEMP/applets-artifacts-rename-20261010-{before,after,final}.json。
+- 製品実装は変更せず、manifest版0.4.0と既存publishを保持。再発行/commit/push/Release/実利用deployなし。同期・バックアップ設定はユキちゃんが担当。今回の成功した新規profileは各方式で直近3回以下、古い証跡は使用終了/再利用要否を一括確定していないため保持し削除0。
+
 ## 2026-10-09: 更新配布物の自動生成
 
 - `codex/update-packages`で発行スクリプトだけを更新。Applet本体の版は0.4.0を維持し、`publish.bat`終了コード0。共通パッカーはAppDock 0.23.0のソースから発行。

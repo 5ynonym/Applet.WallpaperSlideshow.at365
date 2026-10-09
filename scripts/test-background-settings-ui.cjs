@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..');
 const host = path.resolve(root, '../AppDock.at365');
 const requireHost = createRequire(path.join(host, 'package.json'));
 const { _electron: electron } = requireHost('playwright');
-const profile = path.join(root, 'artifacts', `background-settings-${Date.now()}`);
+const profile = path.join(root, '.artifacts', `background-settings-${Date.now()}`);
 const folder = path.join(profile, 'extensions', 'wallpaper');
 fs.mkdirSync(folder, { recursive: true });
 fs.cpSync(path.join(root, 'Applet.WallpaperSlideshow.RegressionTests/bin/Release/net10.0-windows'), folder, { recursive: true });

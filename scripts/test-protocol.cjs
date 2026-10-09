@@ -9,7 +9,7 @@ const fixture = path.join(root, 'Applet.WallpaperSlideshow.RegressionTests/bin/R
 
 (async () => {
   const settings = {};
-  const imageDirectory = fs.mkdtempSync(path.join(root, 'artifacts', 'protocol-images-'));
+  const imageDirectory = fs.mkdtempSync(path.join(root, '.artifacts', 'protocol-images-'));
   let panel, logged = false, diagnostics = '';
   const child = spawn(fixture, ['--protocol-fixture'], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
   child.stderr.on('data', (data) => { diagnostics += data; });
