@@ -130,12 +130,23 @@ delete env.ELECTRON_RUN_AS_NODE;
     assert.equal(snapshot.extensions[0].tray.length, 0);
     assert.equal(snapshot.extensions[0].state, 'running');
     await page.screenshot({ path: path.join(profile, 'playback-controls.png') });
+    await require('./settings-mcp-check.cjs')({ host, profile, page, id: manifest.id,
+      keys: ['paused', 'intervalSeconds', 'tileMargin', 'historyLimit', 'thumbnailWidth', 'thumbnailHeight', 'maxFileNameLength', 'historyPageSize'],
+      changes: { tileMargin: 12, historyLimit: 25, thumbnailWidth: 32, thumbnailHeight: 24, maxFileNameLength: 24, historyPageSize: 2 },
+      invalid: [{ thumbnailWidth: 0, tileMargin: 13 }, { historyPageSize: 1001 }, { monitors: [] }], hidden: ['monitors'] });
+    await page.getByRole('button', { name: '最近使った壁紙', exact: true }).click();
+    await page.waitForFunction(() => document.querySelectorAll('.panel-images article').length === 2);
+    await page.waitForFunction(() => [...document.querySelectorAll('.panel-images img')].every(i => i.complete && i.naturalWidth > 0 && i.naturalHeight > 0 && i.naturalWidth <= 32 && i.naturalHeight <= 24 && (i.naturalWidth === 32 || i.naturalHeight === 24)));
+    await page.getByRole('tab', { name: '設定', exact: true }).click();
+    assert.equal(await page.getByRole('spinbutton', { name: 'タイル間の余白（px）', exact: true }).inputValue(), '12');
+    assert.equal(await page.getByRole('spinbutton', { name: '履歴件数（モニターごと）', exact: true }).inputValue(), '25');
+    snapshot = await page.evaluate(() => window.dock.snapshot());
     // Update-feed regression belongs to the host portable-updates tests.
     const expectedMissing = entry => entry.source === manifest.id && entry.message.startsWith('[画像サイズ: ') && entry.message.includes('missing-image.png');
     assert.equal(snapshot.logs.filter(expectedMissing).length, 1, 'fixture missing image logged once');
     assert.deepEqual(snapshot.logs.filter((entry) => entry.level === 'error' && entry.source !== 'test.requires-new-host' && !expectedMissing(entry)), []);
     assert.deepEqual(errors, []);
     fs.writeFileSync(path.join(profile, 'result.json'), JSON.stringify({ok:true,version:snapshot.version,checks:['generated settings commands / panel / persistence / history / local images']}));
-    console.log(JSON.stringify({ ok: true, profile, checks: ['legacy JSON to per-monitor form / independent padding / folder picker / reorder / persistence', 'generated command catalog / explicit activation / wait cancellation', 'per-monitor history / page size form / local large images / preview / responsive layout', 'image deletion / cancel / refresh / no per-item commands', 'pause persistence / no tray / no page errors'] }, null, 2));
+    console.log(JSON.stringify({ ok: true, profile, checks: ['legacy JSON to per-monitor form / independent padding / folder picker / reorder / persistence', 'generated command catalog / explicit activation / wait cancellation', 'per-monitor history / page size form / local large images / preview / responsive layout', 'image deletion / cancel / refresh / no per-item commands', 'pause persistence / no tray / no page errors', 'MCP 8 settings / validation / excluded monitor list / native thumbnail sizes and pagination'] }, null, 2));
   } finally { await app.close(); }
 })().catch((error) => { console.error(error); process.exitCode = 1; });

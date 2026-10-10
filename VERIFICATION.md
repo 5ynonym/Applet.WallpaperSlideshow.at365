@@ -1,5 +1,17 @@
 # 検証記録
 
+## 2026-10-11: 公開設定拡充のコミット前確認
+
+- stageしたtree `8c741df3b30d6999a8b33af0f14c572e88572013`の標準回帰と発行ホスト/実AppletのGUI・MCPを再実行して成功。壁紙はRPC/発行native EXEも終了0。検証前後の製品・テスト・発行物hash不変を確認し、再発行なし。
+- 証跡は.artifacts/commit-validation-public-settings-20261011。完全ログ/終了コード/hash、対象tree/commit、兄弟ホストとツールの入力を記録。検証後の変更は本記録の追加のみで、最終treeを保存する。実サービス/実消灯・ロック/実デスクトップ壁紙は未操作。ローカルコミットまで。
+
+## 2026-10-11: 0.4.6 単純な設定の外部公開
+
+- 既存公開2項目にtileMargin/historyLimit/thumbnailWidth/thumbnailHeight/maxFileNameLength/historyPageSizeを追加し、公開8項目。monitorsや画像フォルダーは非公開。runtime実装の変更なし。
+- Release標準回帰、RPC8群、発行native EXEの不正設定拒否・共通ログ・実HWND/終了が成功。発行ホスト＋native fixture GUI6群（ui-1791667790639）で公開schema/値/更新、範囲外・monitorsの拒否、dryRun・revision・書込拒否、2件/ページと32×24上限のサムネイルへの反映を確認。実デスクトップ壁紙はfakeで代替。
+- 必要本体版0.26.30。自身のpublish/update.zipは46267537 bytes、SHA256 9153da59a4b911e1d49c0a2ef6f97285b5d8b3d4a26a64467d05919ab3ef586c。manifest/feed/ZIP全2ファイルの内容一致を確認。未変更本体/Gmail等の再発行、依存更新、commit/push/Release/deployなし。
+- 証跡は.artifacts/public-settings-20261011。GUI試験を現行のApplet詳細タブ/保存操作へ更新し、試験用ポート固定・起動完了待ち・意図した拒否ログ・画像の縦横比の期待値を修正。途中失敗ログは保持し、最終試験は終了0。認証・実メール・実OS更新は対象外。古い成功profileは方式別で3件以下、その他の失敗/不明/再利用資料は保持し削除対象なし。
+
 ## 2026-10-11: 設定コマンドのコミット前確認
 
 - 対象8ファイルをstage後、標準.NET Release回帰、RPC8群と発行native EXEの不正設定拒否/共通ログ/実HWND/終了、発行ホストのGUI5群を再実行し、すべて終了0。実デスクトップの壁紙APIはfakeで代替。
