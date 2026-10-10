@@ -55,8 +55,6 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
             config = options;
             fingerprint = SlideshowOptions.Fingerprint(options);
         }, token);
-        Register(services.ExtensionId + ".start", "壁紙スライドショーを開始／再開", ct => PauseAsync(false, ct));
-        Register(services.ExtensionId + ".stop", "壁紙スライドショーを停止", ct => PauseAsync(true, ct));
         Register(services.ExtensionId + ".next", "次の壁紙に更新", async ct => {
             await dispatcher.InvokeAsync(engine.Next, ct); await PublishAsync(ct);
         });
@@ -69,7 +67,6 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
         });
         Register(services.ExtensionId + ".background-settings", "Windowsの背景設定を開く",
             ct => dispatcher.InvokeAsync(engine.OpenWindowsBackgroundSettings, ct));
-        Register(services.ExtensionId + ".toggle", "壁紙スライドショーの開始／停止を切り替え", ct => PauseAsync(!services.Settings.Get("paused", false), ct));
         Register(services.ExtensionId + ".history", "最近使った壁紙を表示", ct => ShowHistoryAsync(0, ct));
         Register(services.ExtensionId + ".history.previous", "壁紙履歴の前のページ", ct => ShowHistoryAsync(historyPage - 1, ct));
         Register(services.ExtensionId + ".history.next", "壁紙履歴の次のページ", ct => ShowHistoryAsync(historyPage + 1, ct));
@@ -90,26 +87,19 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
         ApplicationController.Instance.StateChanged += StateChanged;
         await PublishAsync(token);
     }
-    private async Task PauseAsync(bool paused, CancellationToken token)
-    {
-        var services = context ?? throw new InvalidOperationException("Appletは停止しています。");
-        await services.Settings.SetAsync("paused", paused, token);
-        // Playback commands must still work when a saved image configuration is invalid.
-        await dispatcher.InvokeAsync(() => engine.Pause(paused), token);
-        await PublishAsync(token);
-    }
     private async Task ApplyAsync(CancellationToken token)
     {
         var services = context;
         if (services is null) return;
         try {
+            // Manual pause must still apply when image configuration is invalid.
+            await dispatcher.InvokeAsync(() => engine.Pause(services.Settings.Get("paused", false)), token);
             var options = SlideshowOptions.Read(services.Settings);
             var refreshHistory = (services.Settings.Get("historyPageSize", 4) != loadedPageSize);
             await dispatcher.InvokeAsync(() => {
                 options.Validate(StableScreensProvider.Screens.Select(s => s.Bounds));
                 var nextFingerprint = SlideshowOptions.Fingerprint(options);
                 if (nextFingerprint != fingerprint) { engine.Configure(options); fingerprint = nextFingerprint; config = options; refreshHistory = true; }
-                engine.Pause(services.Settings.Get("paused", false));
             }, token);
             if (refreshHistory && historyVisible && pendingDeletion is null) await ShowHistoryAsync(historyPage, token);
             else await PublishAsync(token);
@@ -144,9 +134,9 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
                 new PanelFact("画像ソース", string.Join(" / ", config?.Monitors.Select((m, i) => $"{i + 1}: {m.SourceFolders().Count()}フォルダー") ?? [])),
                 new PanelFact("バージョン", typeof(WallpaperApplet).Assembly.GetName().Version!.ToString(3)),
             }, new[] {
-                new PanelAction("開始／再開", services.ExtensionId + ".start"),
-                new PanelAction("停止", services.ExtensionId + ".stop"),
-                new PanelAction("開始／停止を切り替え", services.ExtensionId + ".toggle"),
+                new PanelAction("開始／再開", services.ExtensionId + ".settings.paused.off"),
+                new PanelAction("停止", services.ExtensionId + ".settings.paused.on"),
+                new PanelAction("開始／停止を切り替え", services.ExtensionId + ".settings.paused.toggle"),
                 new PanelAction("次の壁紙に更新", services.ExtensionId + ".next"),
                 new PanelAction("最近使った壁紙", services.ExtensionId + ".history"),
                 new PanelAction("データフォルダーを開く", services.ExtensionId + ".data"),

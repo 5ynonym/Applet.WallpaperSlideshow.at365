@@ -3,8 +3,8 @@
   "id": "at365.wallpaper-slideshow",
   "name": "Applet.WallpaperSlideshow.at365",
   "displayName": "WallpaperSlideshow.at365",
-  "version": "0.4.4",
-  "minimumHostVersion": "0.26.29",
+  "version": "0.4.5",
+  "minimumHostVersion": "0.26.30",
   "startupDelaySeconds": 30,
   "updateRepository": "5ynonym/Applet.WallpaperSlideshow.at365",
   "runtime": "native",
@@ -21,7 +21,13 @@
       "key": "paused",
       "default": false,
       "description": "手動停止状態を保存します。ロック・リモート接続による停止は別に維持します。",
-      "type": "boolean"
+      "type": "boolean",
+      "automation": true,
+      "generateCommands": [
+        "on",
+        "off",
+        "toggle"
+      ]
     },
     {
       "maximum": 2147483,
@@ -31,7 +37,8 @@
       "description": "長めの間隔ほど画像の読み込みとCPU使用を減らせます。",
       "default": 60,
       "step": 1,
-      "minimum": 1
+      "minimum": 1,
+      "automation": true
     },
     {
       "title": "モニターごとの画像設定",
@@ -184,28 +191,6 @@
     }
   ],
   "commands": [
-    {
-      "title": "壁紙スライドショーを開始／再開",
-      "activateOnExecute": true,
-      "id": "at365.wallpaper-slideshow.start",
-      "automation": true,
-      "aliases": [
-        "at365.wallpaper-slideshow.resume"
-      ]
-    },
-    {
-      "id": "at365.wallpaper-slideshow.stop",
-      "automation": true,
-      "title": "壁紙スライドショーを停止",
-      "aliases": [
-        "at365.wallpaper-slideshow.pause"
-      ]
-    },
-    {
-      "title": "壁紙スライドショーの開始／停止を切り替え",
-      "activateOnExecute": true,
-      "id": "at365.wallpaper-slideshow.toggle"
-    },
     {
       "id": "at365.wallpaper-slideshow.next",
       "automation": true,

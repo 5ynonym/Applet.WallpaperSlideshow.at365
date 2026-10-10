@@ -74,3 +74,7 @@ Web配布やGitHub Releaseには同じ発行で生成したJSONとZIPを一緒�
 ## 外部コマンド宣言
 
 AppDock 0.26.29以降のmanifest `commands[].automation`で公開対象を宣言します。本体側へApplet固有のIDを追加する必要はありません。公開契約・権限・動的登録の扱いは[共通操作API](../AppDock.at365/docs/automation.md#appletによる公開宣言)を参照してください。
+
+## 設定コマンド（0.4.5）
+
+公開設定はmanifestのpaused/intervalSecondsで宣言し、pausedのon/off/toggleは本体生成へ置き換えました。旧start/stop/toggleとresume alias、独自PauseAsyncを削除。パネルは生成IDを参照します。画像設定の検証より先にsettings.changedのpausedをエンジンへ反映し、不正な画像設定があっても停止・再開を維持します。最低本体版0.26.30、公開/生成/競合/ログは[共通仕様](../AppDock.at365/docs/automation.md#設定宣言と自動生成コマンド)を参照。RPC試験は更新通知の保存値を実プロセスへ送り、生成コマンドの実行はホストGUIで検証します。

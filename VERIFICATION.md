@@ -1,5 +1,19 @@
 # 検証記録
 
+## 2026-10-11: 設定コマンドのコミット前確認
+
+- 対象8ファイルをstage後、標準.NET Release回帰、RPC8群と発行native EXEの不正設定拒否/共通ログ/実HWND/終了、発行ホストのGUI5群を再実行し、すべて終了0。実デスクトップの壁紙APIはfakeで代替。
+- 検証前後treeは`0f22db87f6cf04d2705897819dbbed742f01a926`。発行ZIP/EXE/manifestのhash不変を確認し、再発行は不要。兄弟ホストの標準221件とGUI10群も成功。
+- 証跡は`.artifacts/commit-validation-settings-commands-20261011/`。検証後の編集は本記録のみで最終tree/commit SHAを保存。GUI成功3件と失敗/不明/再利用資料を保持し削除対象なし。今回の依頼範囲はローカルコミットまで。
+
+## 2026-10-11: 0.4.5 設定宣言から生成する停止/再開コマンド
+
+- 最低本体0.26.30。paused/intervalSecondsを公開し、paused.on/off/toggleは本体生成。旧start/stop/toggleとresume/pause aliasを削除し、パネルも生成IDへ置換。既存割当の移行なし。画像設定の検証より先に手動停止を反映し、不正設定時も最後の有効構成で停止/再開できる。
+- .NET Release回帰成功、変更後native fixtureのRPC8項目成功。発行実EXE0.4.5の不正設定による起動拒否/ホストログ/実HWND query-cancel-end/正常終了を確認。デスクトップへの壁紙操作はfakeで代替。
+- 現行の詳細タブにGUIスクリプトを更新。将来版拒否fixtureの無効なsettingActions参照を除去し、生成コマンドの停止中表示/実行不可、明示的な起動、パネルから停止/再開/反転と保存、画像履歴/プレビュー/削除/ページ設定など5群成功。source .artifacts/ui-1791665379827、発行host .artifacts/ui-1791665912760。fixtureの意図した画像エラー1回以外のエラーなし。旧GitHub更新表示モックは現在のupdate.json方式に非対応のため本スクリプトから分離し、本体portable-updates回帰へ委ねた。
+- publish.bat終了0。自己完結EXE/manifest/feed版一致、ZIP46267538bytes、SHA256 0b2ae5e0321a0e4cff51768af6985c17f07f924bb44212ee6e54f11ffeb4b08b。ZIP全2ファイルとpublish内容一致。証跡.artifacts/settings-commands-20261011。
+- 実PCの壁紙変更、Google等の外部サービス、OS自体の終了は未実施。今回の壁紙生成コマンドの実機試験はnative fixture＋発行ホストであり、実画像のデスクトップ反映まで保証するものではない。commit/push/Release/deployなし。
+
 ## 2026-10-10: 0.4.3 コミット前の全回帰確認
 
 - 共通ログ/Windows終了対応のコミット依頼により、対象19ファイルをstageしてからRelease標準回帰8グループを再実行して成功。検証開始/終了のtreeは`7b385e05185f67aa748c7fdb2013758c40dde874`で一致し、未stage/未追跡の入力なし。
