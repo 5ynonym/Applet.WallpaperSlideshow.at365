@@ -73,6 +73,12 @@ internal static class AppletTests
         public bool IsPaused { get; private set; }
         public void Start(Config config, bool paused) {
             IsPaused = paused;
+            using (var wallpaper = new Bitmap(12, 8)) {
+                using (var graphics = Graphics.FromImage(wallpaper)) graphics.Clear(Color.Red);
+                wallpaper.Save(Const.WallpaperPicturePath, System.Drawing.Imaging.ImageFormat.Bmp);
+            }
+            ImageLoader.ReadSize(Path.Combine(folder, "missing-image.png"));
+            ImageLoader.ReadSize(Path.Combine(folder, "missing-image.png"));
             HistoryManager.Instance.EnsureInitialized(Screen.AllScreens);
             HistoryManager.Instance.SetConfig(config);
             for (int i = 0; i < 7; i++) HistoryManager.Instance.Push(0, Path.Combine(folder, $"image{i}.png"), config.History.Limit);
@@ -87,7 +93,19 @@ internal static class AppletTests
             Console.Error.WriteLine("FIXTURE_PREPARE_BACKGROUND " + IsPaused);
         }
         public void OpenWindowsBackgroundSettings() { Console.Error.WriteLine("FIXTURE_OPEN_BACKGROUND_SETTINGS"); }
-        public void Stop() { }
+        public void Stop() {
+            WallpaperController.ClearWallpaper(path => {
+                if (path != string.Empty) throw new Exception("Cleanup must clear the Windows wallpaper path");
+                using var black = new Bitmap(Const.WallpaperPicturePath);
+                if (black.Size != new Size(1, 1) || black.GetPixel(0, 0).ToArgb() != Color.Black.ToArgb())
+                    throw new Exception("Cleanup did not write a black BMP before applying it");
+                Console.Error.WriteLine("FIXTURE_CLEANUP_BLACK");
+            });
+            IsPaused = true;
+            AppLog.Error("fixture shutdown", new IOException("expected cleanup diagnostic"));
+            // The host may terminate the fixture immediately after deactivate responds.
+            Directory.Delete(folder, true);
+        }
     }
     public static void RunProtocolFixture()
     {
@@ -95,6 +113,8 @@ internal static class AppletTests
         var protocol = Console.Out; Console.SetOut(Console.Error);
         var folder = Path.Combine(Path.GetTempPath(), "WallpaperFixture-" + Guid.NewGuid());
         Directory.CreateDirectory(folder);
+        var originalData = Const.AppDataFolder;
+        Const.AppDataFolder = folder;
         for (int i = 0; i < 7; i++) {
             using var image = i == 0 ? new Bitmap(1500, 1000) : new Bitmap(64, 48);
             using (var graphics = Graphics.FromImage(image)) graphics.Clear(Color.FromArgb(255, 30 * i, 120, 220 - 20 * i));
@@ -106,7 +126,8 @@ internal static class AppletTests
             }
             image.Save(Path.Combine(folder, $"image{i}.png"));
         }
-        using var form = new Form { ShowInTaskbar = false }; _ = form.Handle;
+        using var form = DispatcherForm.Instance; _ = form.Handle;
+        Console.Error.WriteLine($"FIXTURE_SESSION_WINDOW {Environment.ProcessId} {form.Handle.ToInt64()}");
         var applet = new WallpaperApplet(form, new FixtureEngine(folder), File.Delete);
         var session = Task.Run(async () => {
             try { await AppletSession.RunAsync(applet, Console.In, protocol); }
@@ -114,6 +135,7 @@ internal static class AppletTests
         });
         Application.Run(new ApplicationContext());
         session.GetAwaiter().GetResult();
-        Directory.Delete(folder, true);
+        Const.AppDataFolder = originalData;
+        if (Directory.Exists(folder)) Directory.Delete(folder, true);
     }
 }

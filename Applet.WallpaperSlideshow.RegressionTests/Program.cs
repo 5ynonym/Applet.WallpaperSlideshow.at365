@@ -8,6 +8,12 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--find-session-window") {
+            SessionShutdownTests.Find(args[1]); return;
+        }
+        if (args.Length == 4 && args[0] == "--send-session-message") {
+            SessionShutdownTests.Send(args[1], args[2], args[3]); return;
+        }
         if (args.Length == 1 && args[0] == "--inspect-background") {
             using var api = new Applets.WallpaperSlideshow.WindowsBackground.DesktopBackgroundApi();
             Console.WriteLine(JsonSerializer.Serialize(new { picture = api.IsPicture, span = api.IsSpan })); return;
@@ -35,8 +41,8 @@ internal static class Program
         Check(Path.GetFullPath(originalData).Equals(Path.GetFullPath(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             @"at365\Applets\WallpaperSlideshow")), StringComparison.OrdinalIgnoreCase),
-            "Generated wallpaper images and logs must use LOCALAPPDATA");
-        Console.WriteLine("PASS: default generated-image and log directory uses LOCALAPPDATA/at365");
+            "Generated wallpaper images must use LOCALAPPDATA");
+        Console.WriteLine("PASS: default generated-image directory uses LOCALAPPDATA/at365");
         var testData = Path.Combine(Path.GetTempPath(), "WallpaperTests-" + Guid.NewGuid());
         Directory.CreateDirectory(testData);
         Const.AppDataFolder = testData;
@@ -50,8 +56,7 @@ internal static class Program
             PreservePauseReasons();
             ClipDrawing();
             LoadDetachedImages();
-
-
+            SessionShutdownTests.Run(testData);
             AsyncTests.Run(testData);
             RecoveryTests.Run(testData);
             Console.WriteLine("PASS: configuration, last valid settings, pause reasons, drawing clips, detached images");

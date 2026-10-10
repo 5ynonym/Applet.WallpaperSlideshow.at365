@@ -1,4 +1,4 @@
-const { spawn } = require('node:child_process');
+const { spawn, execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
@@ -10,14 +10,15 @@ const fixture = path.join(root, 'Applet.WallpaperSlideshow.RegressionTests/bin/R
 (async () => {
   const settings = {};
   const imageDirectory = fs.mkdtempSync(path.join(root, '.artifacts', 'protocol-images-'));
-  let panel, logged = false, diagnostics = '';
+  let panel, diagnostics = '';
+  const logs = [];
   const child = spawn(fixture, ['--protocol-fixture'], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
   child.stderr.on('data', (data) => { diagnostics += data; });
   const peer = new JsonLinePeer(child.stdout, child.stdin, async (method, params) => {
     if (method === 'host.ui.panel') { panel = params; return null; }
     if (method === 'host.ui.imageDirectory') return imageDirectory;
     if (method === 'host.settings.set') { settings[params.key] = params.value; return null; }
-    if (method === 'host.log') { logged = true; return null; }
+    if (method === 'host.log') { logs.push(params); return null; }
     throw new Error('Unexpected API ' + method);
   });
   const exited = new Promise((resolve, reject) => { child.on('error', reject); child.on('exit', (code) => resolve(code)); });
@@ -63,7 +64,7 @@ const fixture = path.join(root, 'Applet.WallpaperSlideshow.RegressionTests/bin/R
     await peer.request('settings.changed', { intervalSeconds: 7 });
     assert.equal(panel.facts.find((fact) => fact.label === '更新間隔').value, '7 秒');
     await peer.request('settings.changed', { intervalSeconds: 0 });
-    assert(logged); assert.match(panel.description, /設定エラー/);
+    assert.match(panel.description, /設定エラー/);
     assert.equal(panel.facts.find((fact) => fact.label === '更新間隔').value, '7 秒');
     await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.stop' });
     assert.equal(settings.paused, true);
@@ -104,9 +105,14 @@ const fixture = path.join(root, 'Applet.WallpaperSlideshow.RegressionTests/bin/R
     await peer.request('command.execute', { id: 'at365.wallpaper-slideshow.home' });
     assert.equal(panel.images, null);
     await peer.request('deactivate'); deactivated = true;
+    assert.equal(logs.filter(entry => entry.message.includes('[画像サイズ:')).length, 1, 'engine errors use host logging with duplicate suppression');
+    assert(logs.some(entry => entry.message.includes('[Windowsの背景設定]') && entry.message.includes('fixture background failure')));
+    assert.equal(logs.filter(entry => entry.message.includes('[AppDock設定の反映]')).length, 1, 'settings error has one common log entry');
+    assert(logs.some(entry => entry.message.includes('[fixture shutdown]')), 'cleanup logs flushed before deactivation completes');
+    assert(logs.every(entry => entry.level === 'error'));
     child.stdin.end();
     assert.equal(await exited, 0, diagnostics);
-    console.log(JSON.stringify({ ok: true, checks: ['activation / no tray / unified start / command registration', 'start / stop / toggle / next', 'playback with invalid image settings', 'live settings / invalid rollback', 'history page sizes 2 / 4 / 16 / thumbnails / release', 'delete confirmation / cancel / exact fixture file removed / repeat rejected', 'deactivate / EOF'] }, null, 2));
+    console.log(JSON.stringify({ ok: true, checks: ['activation / no tray / unified start / command registration', 'start / stop / toggle / next', 'playback with invalid image settings', 'live settings / invalid rollback', 'history page sizes 2 / 4 / 16 / thumbnails / release', 'delete confirmation / cancel / exact fixture file removed / repeat rejected', 'engine / command / settings / shutdown errors use common host logging', 'deactivate / EOF'] }, null, 2));
   } finally {
     if (!deactivated && !peer.closed) await peer.request('deactivate').catch(() => {});
     child.stdin.end(); peer.close();
@@ -121,12 +127,19 @@ const fixture = path.join(root, 'Applet.WallpaperSlideshow.RegressionTests/bin/R
   if (!fs.existsSync(exe)) throw new Error('Publish the Applet before the native startup smoke.');
   const child = spawn(exe, [], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
   let diagnostics = ''; child.stderr.on('data', (data) => { diagnostics += data; });
-  const peer = new JsonLinePeer(child.stdout, child.stdin, async () => null);
+  const logs = [];
+  const peer = new JsonLinePeer(child.stdout, child.stdin, async (method, params) => { if (method === 'host.log') logs.push(params); return null; });
   const exited = new Promise((resolve, reject) => { child.on('error', reject); child.on('exit', resolve); });
   try {
     await assert.rejects(peer.request('activate', { id: 'at365.wallpaper-slideshow', settings: { monitors: '{' } }), /JSON|depth|Depth|invalid|Invalid|expected|Expected/i);
+    const window = execFileSync(fixture, ['--find-session-window', String(child.pid)], { windowsHide: true, encoding: 'utf8' }).trim();
+    for (const [action, result] of [['query', '1'], ['cancel', '0'], ['end', '0']]) {
+      assert.equal(execFileSync(fixture, ['--send-session-message', String(child.pid), window, action], { windowsHide: true, encoding: 'utf8' }).trim(), result,
+        'published native HWND handles ' + action);
+    }
     await peer.request('deactivate'); child.stdin.end();
     assert.equal(await exited, 0, diagnostics);
-    console.log('PASS published native startup / invalid settings rejected before desktop access / clean exit');
+    assert(logs.some(entry => entry.level === 'error' && entry.message.includes('[Appletの開始]')), 'published entry point sends activation errors via common logging');
+    console.log('PASS published native startup / invalid settings rejected before desktop access / common error logging / real HWND query-cancel-end / clean exit');
   } finally { child.stdin.end(); peer.close(); if (child.exitCode === null) child.kill(); }
 })().catch((error) => { console.error(error); process.exitCode = 1; });

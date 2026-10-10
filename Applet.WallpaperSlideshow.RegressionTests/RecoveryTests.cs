@@ -13,7 +13,7 @@ internal static class RecoveryTests
 
         RecoverWatcher(root);
         ScanPartialTree();
-        RotateLog(root);
+        HostLogTests.Run(root);
         DisposeController();
         Console.WriteLine("PASS: watcher recovery/disposal, partial scan, logging, controller disposal");
     }
@@ -61,17 +61,6 @@ internal static class RecoveryTests
         var files = ImageCatalog.Scan("root", Files,
             path => path == "root" ? ["denied", "good"] : Array.Empty<string>());
         Check(files.Order().SequenceEqual(new[] { "good.png", "root.png" }), "Inaccessible child discarded readable files");
-    }
-
-    private static void RotateLog(string root)
-    {
-        var path = Path.Combine(root, "errors.log");
-        File.WriteAllText(path, new string('x', 1024 * 1024));
-        AppLog.Error("rotation-test", new IOException("expected error"));
-        Check(File.Exists(path + ".1") && File.ReadAllText(path).Contains("rotation-test"), "Log rotation failed");
-        var length = new FileInfo(path).Length;
-        AppLog.Error("rotation-test", new IOException("expected error"));
-        Check(new FileInfo(path).Length == length, "Repeated error not throttled");
     }
 
     private static void DisposeController()

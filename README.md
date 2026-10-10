@@ -1,10 +1,10 @@
 # Applet.WallpaperSlideshow.at365
 
-WallpaperSlideshow.at365をAppDockへ移したWindows用Appletです。**v0.4.1 / AppDock v0.21.0以降が必要**です。
+WallpaperSlideshow.at365をAppDockへ移したWindows用Appletです。**v0.4.3 / AppDock v0.26.18以降が必要**です。
 
 ## 導入・更新
 
-0.4.1から生成画像とログをLOCALAPPDATAへ保存します。旧APPDATA内のファイルは自動移動・削除しません。壁紙フォルダーの元画像とAppDockの共有設定はこれまでどおりです。
+0.4.1から生成画像をLOCALAPPDATAへ保存します。0.4.2からエラーログはAppDockの「ログ」ページと、このAppletの詳細にある「ログ」タブに表示します。旧APPDATA内のファイルや以前の`errors.log`は自動移動・削除しません。壁紙フォルダーの元画像とAppDockの共有設定はこれまでどおりです。
 
 1. AppDockをトレイの「終了」から完全終了します。
 2. 配布物の `extension.json`、`Applet.WallpaperSlideshow.at365.exe` を、AppDock.at365.exeの隣の `extensions/Applet.WallpaperSlideshow.at365/` に配置します。更新時も配布物一式をそろえて置き換えてください。
@@ -53,7 +53,7 @@ AppDock共通の「開始までの秒数」は**既定30秒**。有効化・AppD
 
 IDの接頭辞は`at365.wallpaper-slideshow.`です。旧`resume`は`start`、旧`pause`は`stop`の別名として既存ショートカットを維持します。未割り当ての別名を新規コマンド一覧に重複表示しません。画像ごとの「履歴1を開く」等はコマンド登録せず、履歴ビュー専用のボタンで処理します。
 
-手動停止は保存され、ロック解除で勝手に再開しません。ロック・リモート接続による停止は手動停止と独立しています。停止中の「次の壁紙」は切り替えず、開始もロック・リモート接続による停止を解除しません。不正設定を保存しても開始・停止は前回の有効設定で操作できます。停止・無効化・終了時の壁紙消去は元アプリの動作を引き継ぎます。元アプリとの同時再生は避けてください。
+手動停止は保存され、ロック解除で勝手に再開しません。ロック・リモート接続による停止は手動停止と独立しています。停止中の「次の壁紙」は切り替えず、開始もロック・リモート接続による停止を解除しません。不正設定を保存しても開始・停止は前回の有効設定で操作できます。停止・無効化・終了時の壁紙消去は元アプリの動作を引き継ぎます。0.4.3からWindowsのシャットダウン・再起動・ログオフでも、終了確定時に同じクリーンアップを行います。終了を取り消した場合は再生を維持します。元アプリとの同時再生は避けてください。
 
 ## モニターごとの履歴
 
@@ -65,7 +65,7 @@ IDの接頭辞は`at365.wallpaper-slideshow.`です。旧`resume`は`start`、�
 
 ## データの保存先
 
-背景設定ボタンが保存する`windows-background.bmp`、一時BMPと`errors.log`は`%LOCALAPPDATA%\at365\Applets\WallpaperSlideshow`、履歴サムネイルはAppDockのPC専用保存先の`cache/panel-images`内に保存します。元アプリのデータとは分離しています。履歴の画像は指定サイズで表示し、ページ変更・操作画面へ戻る・終了時にサムネイルを削除します。強制終了時のキャッシュが残ることはあります。
+背景設定ボタンが保存する`windows-background.bmp`と一時BMPは`%LOCALAPPDATA%\at365\Applets\WallpaperSlideshow`、履歴サムネイルはAppDockのPC専用保存先の`cache/panel-images`内に保存します。エラーログはAppDockが保存します。元アプリのデータとは分離しています。履歴の画像は指定サイズで表示し、ページ変更・操作画面へ戻る・終了時にサムネイルを削除します。強制終了時のキャッシュが残ることはあります。
 
 ## 手動設定の例・更新の確認
 
@@ -78,7 +78,7 @@ IDの接頭辞は`at365.wallpaper-slideshow.`です。旧`resume`は`start`、�
 ]
 ```
 
-AppDock 0.21.0未満では利用できません。AppDock本体と各Appletの「更新を確認」は手動でGitHubの正式リリースを調べます。Appletの問い合わせ先は`5ynonym/Applet.WallpaperSlideshow.at365`です。自動ダウンロード・更新は行いません。
+AppDock 0.26.18未満では利用できません。AppDock本体と各Appletの「更新を確認」は手動でGitHubの正式リリースを調べます。Appletの問い合わせ先は`5ynonym/Applet.WallpaperSlideshow.at365`です。自動ダウンロード・更新は行いません。
 
 ---
 

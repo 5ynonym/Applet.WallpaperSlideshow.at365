@@ -1,5 +1,25 @@
 # 検証記録
 
+## 2026-10-10: 0.4.3 コミット前の全回帰確認
+
+- 共通ログ/Windows終了対応のコミット依頼により、対象19ファイルをstageしてからRelease標準回帰8グループを再実行して成功。検証開始/終了のtreeは`7b385e05185f67aa748c7fdb2013758c40dde874`で一致し、未stage/未追跡の入力なし。
+- `test-protocol.cjs`のRPC8項目と発行native EXEの起動失敗ログ・実HWND query/cancel/end、`test-session-shutdown.cjs`の確定/logoff/通常停止3群、`test-host-logging-ui.cjs`の固定本体/実AppletログGUI4群も再実行してすべて終了0。結果は`.artifacts/session-shutdown-1791638882618/result.json`と`.artifacts/host-logging-1791638884710/result.json`。取消後再生、通知から戻る前の黒BMP生成、1回のcleanup、停止時errorレベルの共通ログ排出を確認。
+- 兄弟AppDockは型検査、標準回帰192/192、変更コード書式確認が成功。発行物0.26.18/0.4.3のhash/size、feed/ZIP全2ファイル、文書リンク95件、既存全体ZIP不変を照合。製品ソース/テスト/依存/発行物は検証前後で不変のため再発行は不要。
+- 再利用用証跡は`.artifacts/commit-validation-20261010-logging-shutdown/`。各コマンド/終了コード/完全ログSHA256、tracked入力、兄弟SDK/Runtime、toolchain/lockfile/依存状態と発行物を保存。検証後の変更は本VERIFICATIONへの記録追加のみで、最終treeとコミットSHAを同証跡に記録する。
+- 完了時整理: 古い成功のhost-logging/session-shutdown各1件を、専用プロセス終了・直下の絶対パス・reparse pointなしを確認して削除。方式別最新成功3件・失敗記録・再利用証跡を保持（cleanup.json）。PC自体のshutdown/reboot/logoff・実壁紙APIは未試験で、隔離実HWND/fake APIの境界を維持。今回の明示依頼は両repoのローカルコミットまで。
+
+## 2026-10-10: 0.4.3 共通ログとWindows終了時クリーンアップ
+
+- 0.4.2で独自errors.logを廃止し、エンジン/監視/画像処理/設定/履歴のエラーを既存のLog.ErrorAsyncへ接続。重複抑制（1分）と上限128件の直列送信、通信失敗のstderr、停止後の最大1秒排出待ちを確認。既存errors.logの内容を変更せず、新規ファイルも作らない回帰が成功。起動失敗は送信完了を最大1秒待ってから元のエラーを返す。
+- 追加依頼のWindows終了対応を含む最終版は0.4.3。非表示DispatcherFormがWM_QUERYENDSESSIONを許可し、取消で再生を変えず、WM_ENDSESSIONの確定時に同期的に同じStopEngineを実行。終了優先度0x2ffと、リソース解放の例外時も壁紙消去を試みるfinallyを追加。通常停止との重複は1回。ログの停止中受付修正のため最低AppDockは0.26.18。
+- 最終Release回帰8グループ成功（.artifacts/session-shutdown-regression.log）。画像/背景API/描画・監視の既存回帰、Logの送信・重複・再接続・切断・無応答・キュー上限、実HWNDへのquery/取消/確定/logoffと黒BMPを確認。デスクトップAPIはfake。
+- test-protocol.cjsの8項目と発行native EXEの不正設定拒否・起動失敗ログ・実透明tool HWNDへのquery/cancel/end・正常終了が成功（.artifacts/session-shutdown-native-protocol.log）。WinFormsの補助HWNDも同じWindowクラスだったため、最初の列挙試験は失敗。実測した透明tool-windowの拡張styleで対象を限定して最終成功。製品コードには試験用コマンドを追加していない。
+- test-session-shutdown.cjsは別プロセスの実DispatcherFormへ限定メッセージを送信。確定終了・logoff・通常deactivateの3群で、取消後の再生、通知から戻る前の黒BMP生成/空の壁紙パスへの適用、重複停止の防止、クリーンアップログの排出・正常RPC終了を確認（.artifacts/session-shutdown-1791637415929/result.json）。
+- 最終固定AppDock 0.26.18単一EXEと0.4.3のGUIは4群成功（.artifacts/host-logging-1791637417933/result.json）。fixture内部の画像エラーと実発行Appletの起動エラーについて、全体/個別ログ画面・Applet ID/errorレベル・ホストログファイル・重複抑制・正常終了・独自errors.logなしを確認。画面画像を目視。停止処理中のfixtureエラーもerrorとして保存。旧本体では起動失敗の即時終了と停止中API拒否があり、前者をAppletで短い送信待ち、後者を本体0.26.18のログだけの受付で修正した。
+- publish.bat終了0。EXE0.4.3は51,710,580bytes/SHA256 75ef53ac044be384c546fc3dfdd62151aaceb68970103c1c69574056e0bbfb89。update.zipは46,268,101bytes/SHA256 855a94bbe98219e450d91514a73338be3ea16be6fadb75c18edbe04afbf2c2fe。ソース/発行manifest・最低host・feed・ZIP全2ファイル・GUI検証コピーが一致（.artifacts/logging-shutdown-final-check.json）。関連文書リンク95件と差分検査成功。
+- 完了時整理: host-loggingの成功3回とsession-shutdownの成功3回を保持。解決済み失敗profileと、旧ui群の結果/利用状況が不明な記録は保持し、.artifactsの追加削除0。旧GUI fixtureが残した自身のTemp画像3フォルダーは、ログのGUID/親パス/画像だけの内容/非転送/プロセス終了を確認して限定削除（logging-fixture-temp-cleanup.json）。今後のfixtureはdeactivate応答前に自身の一時画像を削除する。
+- 実PCのシャットダウン/再起動/logoff、Windows壁紙APIの実状態、強制終了/電源断は未試験。Windowsの終了順全体や別アプリによる終了取消は実OS操作での確認が必要。ユーザーの壁紙・画像・設定と旧ログは変更していない。実装とローカルpublishまでで、commit/push/Release/deployなし。
+
 ## 2026-10-10: 開発生成物を`.artifacts`へ改名
 
 - ユーザー指定でartifacts→.artifactsを改名。移動直後に既存1876項目の相対パス/size/mtime/ディレクトリ・リンク属性が一致し、検証終了時も元の全項目のsize/mtime/属性が不変。配布物4ファイルのSHA256も検証前後で一致。保存済みログ/JSONは内部パスを含めて保持し、過去記録の当repoのartifacts/は.artifacts/へ読み替える。

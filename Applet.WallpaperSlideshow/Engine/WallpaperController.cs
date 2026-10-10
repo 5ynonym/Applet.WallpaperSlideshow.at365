@@ -140,12 +140,12 @@ public sealed class WallpaperController : IDisposable
         finally { WallpaperRenderer.Instance.OverwriteWithBlack(Const.WallpaperPicturePath); }
     }
 
-    public static void ClearWallpaper()
+    public static void ClearWallpaper(Action<string>? setWallpaper = null)
     {
         try
         {
             WallpaperRenderer.Instance.OverwriteWithBlack(Const.WallpaperPicturePath);
-            SetWallpaper(string.Empty);
+            (setWallpaper ?? SetWallpaper)(string.Empty);
         }
         catch (Exception ex) { AppLog.Error("壁紙の消去", ex); }
     }

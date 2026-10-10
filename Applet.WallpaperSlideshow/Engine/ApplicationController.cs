@@ -261,8 +261,8 @@ namespace at365.WallpaperSlideshow
         {
             if (_shutdown) return;
             _shutdown = true;
-            Dispose();
-            WallpaperController.ClearWallpaper();
+            try { Dispose(); }
+            finally { WallpaperController.ClearWallpaper(); }
         }
 
         public void Dispose()

@@ -9,6 +9,7 @@ namespace Applets.WallpaperSlideshow;
 internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engine, Action<string>? deleteImage = null) : IAppDockExtension, IPanelActionHandler
 {
     private IExtensionContext? context;
+    private AppLog.HostSession? logging;
     private IDisposable? subscription;
     private Config? config;
     private string? fingerprint;
@@ -30,6 +31,16 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
     public async Task ActivateAsync(IExtensionContext services, CancellationToken token)
     {
         context = services;
+        logging = AppLog.Connect(services.Log);
+        if (dispatcher is DispatcherForm sessionWindow) sessionWindow.OnSessionEnding = StopEngine;
+        try { await ActivateCoreAsync(services, token); }
+        catch (Exception error) when (error is not OperationCanceledException) {
+            await AppLog.ErrorAsync("Appletの開始", error);
+            throw;
+        }
+    }
+    private async Task ActivateCoreAsync(IExtensionContext services, CancellationToken token)
+    {
         void Register(string id, string title, Func<CancellationToken, Task> action) => services.Commands.Register(id, title, async ct => {
             await commandGate.WaitAsync(ct);
             try { await action(ct); } finally { commandGate.Release(); }
@@ -104,7 +115,6 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
             else await PublishAsync(token);
         } catch (Exception error) when (error is not OperationCanceledException) {
             AppLog.Error("AppDock設定の反映", error);
-            await services.Log.ErrorAsync("設定を反映できません。前回の設定を維持します: " + error.Message, token);
             await PublishAsync(token, error.Message);
         }
     }
@@ -221,14 +231,14 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
         return ShowHistoryAsync(monitorPages.GetValueOrDefault(historyMonitor), token);
     }
     private static void TryDelete(string file) {
-        try { File.Delete(file); } catch (Exception error) { Console.Error.WriteLine(error.Message); }
+        try { File.Delete(file); } catch (Exception error) { AppLog.Error("履歴画像の削除", error); }
     }
     private void ClearImages() { foreach (var file in imageFiles) TryDelete(file); imageFiles = []; }
     private async void DisplayChanged(object? sender, EventArgs e) => await RefreshStateAsync();
     private async void StateChanged() => await RefreshStateAsync();
     private async Task RefreshStateAsync() {
         try { await PublishAsync(CancellationToken.None); }
-        catch (Exception error) { Console.Error.WriteLine(error); }
+        catch (Exception error) { AppLog.Error("パネルの更新", error); }
     }
     public async Task DeactivateAsync(CancellationToken token)
     {
@@ -236,14 +246,24 @@ internal sealed class WallpaperApplet(Form dispatcher, ISlideshowController engi
         SystemEvents.DisplaySettingsChanged -= DisplayChanged;
         ApplicationController.Instance.StateChanged -= StateChanged;
         context = null;
-        await dispatcher.InvokeAsync(() => {
+        try { await dispatcher.InvokeAsync(() => {
             pendingDeletion = null; historyImages = []; visibleHistory = []; historyVisible = false;
             ClearImages();
             if (imageFolder is not null) {
-                try { Directory.Delete(imageFolder); } catch (Exception error) { Console.Error.WriteLine(error.Message); }
+                try { Directory.Delete(imageFolder); } catch (Exception error) { AppLog.Error("履歴フォルダーの削除", error); }
                 imageFolder = null;
             }
-            if (started) { engine.Stop(); started = false; }
-        }, CancellationToken.None);
+            try { StopEngine(); }
+            finally { if (dispatcher is DispatcherForm sessionWindow) sessionWindow.OnSessionEnding = null; }
+        }, CancellationToken.None); }
+        finally {
+            if (logging is not null) { await logging.DisposeAsync(); logging = null; }
+        }
+    }
+    private void StopEngine()
+    {
+        if (!started) return;
+        engine.Stop();
+        started = false;
     }
 }
