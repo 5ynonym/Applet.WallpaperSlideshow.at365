@@ -112,3 +112,9 @@
 - 発行manifestはソースとSHA256一致。実利用先deploy、commit、pushなし。
 - 初回sandboxの.NET buildは理由を伴わず失敗したが、許可された通常Windows環境でbuild/回帰/publish成功。
 - 最終Applet EXE: 51705880 bytes、SHA256 4462DD32341C2F57F11EA2315009F146526838FFF4FDA1B1F6EBB0BED985BFD0。
+## 2026-10-10: 0.4.1 生成画像をLOCALAPPDATAへ保存
+
+- Const.AppDataFolderをLocalApplicationDataへ変更し、生成BMP（windows-background.bmpを含む）・errors.log・データフォルダー操作を%LOCALAPPDATA%/at365/Applets/WallpaperSlideshowへ統一。Windows自身のAPPDATA/Microsoft/Windows/Themes/TranscodedWallpaperは読み取り元として維持。旧Roamingファイルの移動・削除なし。設定はホストSettings、履歴サムネイルはホストPC専用imageDirectory。
+- Release回帰6グループ成功。既定保存先も検査し、生成画像/停止時黒背景/キャッシュ欠落/API失敗/COMとファイル解放/描画/監視復旧をfakeで確認（.artifacts/localappdata-regression.log）。RPC fixture7項目と発行native EXEの不正設定拒否・正常終了が成功（localappdata-protocol.log）。実ユーザーの壁紙やWindows設定は変更していない。
+- publish.bat終了0。EXE ProductVersion0.4.1、51707296bytes、SHA256 703ce4cfd8a120a35fe902d26511e63f198d534f634f44e363aff9d3bb02310e。update.zip46264607bytes、SHA256 ab2170b748a33d5741ebe89159e910326bd12773e2de0c6abc52371223d05f7b。最低host0.21.0維持。feedサイズ/hash/ZIP全2ファイルと発行元一致（localappdata-final-check.json）。
+- protocol一時画像はランナー終了時に削除済み。完了時整理で成功の実行方式・利用状況が不明な旧記録/再利用資料を保持し追加削除0。新規AGENTSと利用/開発文書を整備。ユーザー指定により今回変更をコミットする。push/Release/実利用deployなし。

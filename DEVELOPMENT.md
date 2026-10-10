@@ -31,11 +31,13 @@ IDesktopWallpaper.SetWallpaper/SetPosition(DWPOS_SPAN)と、HKCUのExplorer/Wall
 
 ## 画像処理・キャッシュの実装
 
+0.4.1ではConst.AppDataFolderの基準をLocalApplicationDataへ変更した。Windows自身が管理するAPPDATA/Microsoft/Windows/Themes/TranscodedWallpaperは引き続き読み取り元にする。旧Roaming領域の移行・削除は追加しない。ホストが供給する履歴画像のimageDirectoryもPC専用rootを使用する。
+
 画像の走査・合成は直列に実行し、更新を重ねず、キャンセル済みの結果を適用しません。設定が同じなら描画をやり直さず、監視の保守は5秒間隔です。抽選のシャッフルは線形時間。タイル画像は1枚ずつ読み込み・縮小・解放し、全タイルの原寸画像を同時に保持しません。
 
 履歴画像は選択したモニターの表示ページだけ順次生成します。指定サイズのPNGをローカルファイルとして読み込み、通信量による画質・解像度の縮小は行いません。ページ変更・操作画面へ戻る・終了時にサムネイルを削除します。ブラウザー側でも画面外の画像を遅延読み込みします。専用トレイアイコン・トレイ項目・履歴ウィンドウは作りません。
 
-一時BMPと`errors.log`は`%AppData%\at365\Applets\WallpaperSlideshow`、履歴サムネイルはAppDockの`.appdock/cache/panel-images`内に保存します。強制終了時のキャッシュが残ることはあります。元アプリのデータとは分離しています。描画の実測と検証範囲は[VERIFICATION.md](VERIFICATION.md)を参照してください。
+一時BMPと`errors.log`は`%LOCALAPPDATA%\at365\Applets\WallpaperSlideshow`、履歴サムネイルはAppDockのPC専用保存先の`cache/panel-images`内に保存します。強制終了時のキャッシュが残ることはあります。元アプリのデータとは分離しています。描画の実測と検証範囲は[VERIFICATION.md](VERIFICATION.md)を参照してください。
 
 画像の削除はWindowsの[IFileOperationのごみ箱指定](https://learn.microsoft.com/ja-jp/windows/win32/api/shobjidl_core/nf-shobjidl_core-ifileoperation-setoperationflags)を使用します。
 

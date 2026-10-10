@@ -10,7 +10,7 @@
     <AssemblyName>Applet.WallpaperSlideshow.at365</AssemblyName>
     <StartupObject>Applets.WallpaperSlideshow.Program</StartupObject>
     <ApplicationIcon>resources/icon.ico</ApplicationIcon>
-    <Version>0.4.0</Version>
+    <Version>0.4.1</Version>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>

@@ -32,6 +32,11 @@ internal static class Program
             Environment.Exit(0); // Exercise ProcessExit with an open output stream.
         }
         var originalData = Const.AppDataFolder;
+        Check(Path.GetFullPath(originalData).Equals(Path.GetFullPath(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            @"at365\Applets\WallpaperSlideshow")), StringComparison.OrdinalIgnoreCase),
+            "Generated wallpaper images and logs must use LOCALAPPDATA");
+        Console.WriteLine("PASS: default generated-image and log directory uses LOCALAPPDATA/at365");
         var testData = Path.Combine(Path.GetTempPath(), "WallpaperTests-" + Guid.NewGuid());
         Directory.CreateDirectory(testData);
         Const.AppDataFolder = testData;
