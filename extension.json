@@ -3,8 +3,8 @@
   "id": "at365.wallpaper-slideshow",
   "name": "Applet.WallpaperSlideshow.at365",
   "displayName": "WallpaperSlideshow.at365",
-  "version": "0.4.3",
-  "minimumHostVersion": "0.26.18",
+  "version": "0.4.4",
+  "minimumHostVersion": "0.26.29",
   "startupDelaySeconds": 30,
   "updateRepository": "5ynonym/Applet.WallpaperSlideshow.at365",
   "runtime": "native",
@@ -188,12 +188,14 @@
       "title": "壁紙スライドショーを開始／再開",
       "activateOnExecute": true,
       "id": "at365.wallpaper-slideshow.start",
+      "automation": true,
       "aliases": [
         "at365.wallpaper-slideshow.resume"
       ]
     },
     {
       "id": "at365.wallpaper-slideshow.stop",
+      "automation": true,
       "title": "壁紙スライドショーを停止",
       "aliases": [
         "at365.wallpaper-slideshow.pause"
@@ -206,6 +208,7 @@
     },
     {
       "id": "at365.wallpaper-slideshow.next",
+      "automation": true,
       "title": "次の壁紙に更新"
     },
     {

@@ -1,6 +1,8 @@
 # Applet.WallpaperSlideshow.at365
 
-WallpaperSlideshow.at365をAppDockへ移したWindows用Appletです。**v0.4.3 / AppDock v0.26.18以降が必要**です。
+WallpaperSlideshow.at365をAppDockへ移したWindows用Appletです。**v0.4.4 / AppDock v0.26.29以降が必要**です。
+
+0.4.4では「次の壁紙」「開始／再開」「停止」をCodex連携へ公開します。Appletを有効・稼働中にし、AppDockのCodex連携でコマンド実行を許可すると利用できます。
 
 ## 導入・更新
 

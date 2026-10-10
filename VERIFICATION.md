@@ -138,3 +138,14 @@
 - Release回帰6グループ成功。既定保存先も検査し、生成画像/停止時黒背景/キャッシュ欠落/API失敗/COMとファイル解放/描画/監視復旧をfakeで確認（.artifacts/localappdata-regression.log）。RPC fixture7項目と発行native EXEの不正設定拒否・正常終了が成功（localappdata-protocol.log）。実ユーザーの壁紙やWindows設定は変更していない。
 - publish.bat終了0。EXE ProductVersion0.4.1、51707296bytes、SHA256 703ce4cfd8a120a35fe902d26511e63f198d534f634f44e363aff9d3bb02310e。update.zip46264607bytes、SHA256 ab2170b748a33d5741ebe89159e910326bd12773e2de0c6abc52371223d05f7b。最低host0.21.0維持。feedサイズ/hash/ZIP全2ファイルと発行元一致（localappdata-final-check.json）。
 - protocol一時画像はランナー終了時に削除済み。完了時整理で成功の実行方式・利用状況が不明な旧記録/再利用資料を保持し追加削除0。新規AGENTSと利用/開発文書を整備。ユーザー指定により今回変更をコミットする。push/Release/実利用deployなし。
+
+## 2026-10-11: 0.4.4 外部公開宣言
+
+- manifestのstart/stop/nextだけにautomation:trueを宣言し、最低AppDock0.26.29へ更新。壁紙処理の変更なし。共通契約はホストdocs/automation.md。
+- publish.bat exit0、manifestと実EXE製品版0.4.4一致。既存test-protocol.cjs成功: fake背景APIでコマンド/設定/履歴/ログ/停止、今回発行した実EXEで不正設定拒否/実HWND query-cancel-end/共通ログ/正常終了を確認。実壁紙変更は行っていない。証跡.artifacts/automation-declarations-20261011。
+- update.zip 46268114bytes / SHA256 829600e35e9f3278639b8af744b35e155dad8119e1ba6ddbcc244decc05b81ad、feed/manifest/ZIP2ファイル一致。ホストreadManifestで宣言3件の読込確認。今回のprotocol一時画像は既存試験が回収、追加の成功フォルダー整理対象なし。commit/push/Release/deployなし。
+
+## 2026-10-11: 0.4.4 コミット前検証
+
+- 対象stage tree 6bd877aec997504e3eb49f58d46ffda26c727a91のソースを維持してdotnet標準回帰とtest-protocol.cjs成功。発行実EXEの不正設定拒否/実HWND終了/ログ、fake APIでコマンド・設定・履歴を確認。実壁紙変更なし。証跡.artifacts/commit-validation-automation-20261011。追跡入力51件とログ/配布物hashを保存、既存発行物不変。
+- 検証後の変更はこの記録のみ。protocol一時領域は既存試験が回収。追加の古い成功整理対象なし、失敗/不明/再利用資料保持。最終tree/commitは証跡へ記録し、push/Release/deployなし。

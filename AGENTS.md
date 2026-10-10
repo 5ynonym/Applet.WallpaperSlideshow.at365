@@ -12,3 +12,5 @@
 - 設定はホストSettingsへ保存する。今後追加する共有素材やホスト管理の端末固有状態は[ホストの保存境界](../AppDock.at365/docs/settings-sync.md)に従う。履歴サムネイルはホストが渡すPC専用imageDirectoryを使う。
 - 回帰とRPC fixtureではユーザーの壁紙・設定・画像を変更しない。Windows背景APIはfakeで検証し、公開EXEのRPC smokeは不正設定を拒否させて正常終了を確認する。
 - GUI試験は直列で行い、実行中にホストのoutやpublishを再ビルドしない。作業完了時のテストフォルダー整理は[ホスト開発ガイド](../AppDock.at365/DEVELOPMENT.md#作業完了時のテストフォルダー整理)に従う。
+
+- 外部公開コマンドは自身のextension.jsonで宣言する。ホストへ壁紙専用の許可一覧を戻さない。契約は[共通操作API](../AppDock.at365/docs/automation.md#appletによる公開宣言)を参照する。
