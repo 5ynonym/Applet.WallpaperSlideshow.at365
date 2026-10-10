@@ -1,5 +1,7 @@
 # Applet.WallpaperSlideshow の作業指示
 
+実装時のテスト選択、コミット前の必要回帰、リリース前のコミット/プッシュ確認と検証証跡の再利用は、[本体・Applet共通手順](../AppDock.at365/docs/development-workflow.md)に従います。この文書の試験コマンドは、その段階に応じて実行します。
+
 作業開始時は[A:入口](../../AGENTS.md)、[共通開発指示](../AGENTS.md)、[ホスト指示](../AppDock.at365/AGENTS.md)を確認する。実装したモジュールは版を更新して自身のpublishへ発行する。commit・公開・実利用先へのdeployは別指示。
 
 - 利用者向け仕様はREADME、開発手順はDEVELOPMENT、検証結果はVERIFICATIONへ分ける。
